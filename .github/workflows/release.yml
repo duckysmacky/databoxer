@@ -2,8 +2,6 @@ name: Build and Release Binaries
 
 on:
   push:
-    branches:
-      - "master"
     tags:
       - "v*"
 
@@ -27,19 +25,19 @@ jobs:
 
       - name: Rename Binary (Linux/macOS)
         if: runner.os != 'Windows'
-        run: mv target/release/lockbox lockbox-${{ runner.os }}
+        run: mv target/release/databoxer databoxer-${{ runner.os }}
 
       - name: Rename Binary (Windows)
         if: runner.os == 'Windows'
-        run: ren target\release\lockbox.exe lockbox-${{ runner.os }}.exe
+        run: ren target\release\databoxer.exe databoxer-${{ runner.os }}.exe
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lockbox-${{ runner.os }}
+          name: databoxer-${{ runner.os }}
           path: |
-            lockbox-${{ runner.os }}
-            lockbox-${{ runner.os }}.exe
+            databoxer-${{ runner.os }}
+            databoxer-${{ runner.os }}.exe
           if-no-files-found: error
 
   release:
