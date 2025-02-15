@@ -9,10 +9,9 @@
 ![windows](https://github.com/duckysmacky/databoxer/actions/workflows/windows.yml/badge.svg)
 ![linux](https://github.com/duckysmacky/databoxer/actions/workflows/linux.yml/badge.svg)
 ![macos](https://github.com/duckysmacky/databoxer/actions/workflows/macos.yml/badge.svg)
+![build](https://github.com/duckysmacky/databoxer/actions/workflows/build.yml/badge.svg)
 
 *The project is still very work-in-progress and the mentioned features could very well change during development*
-
-## 🪜 Table of content
 
 - [About](#-about)
 - [Features](#-features)
@@ -73,8 +72,6 @@ checksum to verify file data integrity.
 
 ## 📂 Installation
 
-Current release: *v0.1.0*
-
 > [!NOTE]
 The current version provides all the main features of the project fully implemented, but with time many of the will be
 expanded upon and many new ones will be added. Since the project is still in development, many already existing features
@@ -82,7 +79,7 @@ might and will change. Consider all version under `1.0.0` to be prone to many in
 
 ### With Cargo
 
-This is the recommended way to install Databoxer
+*This is the recommended way to install Databoxer*
 
 ```shell
 cargo install databoxer
@@ -120,10 +117,15 @@ functions and types through `databoxer::*`. Most functions use the `xOptions` st
 for each `x` operation.
 
 ### Encrypting files
+<details>
+
+<summary>Example</summary>
 
 <div>
-    <img alt="encryption" src="media/gif/encryption-short.gif">
+    <img alt="encryption" src="media/gif/encryption-full.gif">
 </div>
+
+</details>
 
 ```shell
 databoxer box <PATH>...
@@ -136,9 +138,15 @@ can specify the output location for each file with a `-o` flag
 
 ### Decrypting files
 
+<details>
+
+<summary>Example</summary>
+
 <div>
-    <img alt="decryption" src="media/gif/decryption-short.gif">
+    <img alt="decryption" src="media/gif/decryption-full.gif">
 </div>
+
+</details>
 
 ```shell
 databoxer unbox <PATH>...
@@ -152,9 +160,15 @@ extension
 
 ### Configuring profiles
 
+<details>
+
+<summary>Example</summary>
+
 <div>
-    <img alt="profiles" src="media/gif/profile-creation-long.gif">
+    <img alt="profiles" src="media/gif/profile-full.gif">
 </div>
+
+</details>
 
 ```shell
 databoxer profile <ACTION> <NAME>
@@ -169,9 +183,15 @@ all other existing profiles.
 
 ### Manipulating encryption keys
 
+<details>
+
+<summary>Example</summary>
+
 <div>
     <img alt="key" src="media/gif/key-set.gif">
 </div>
+
+</details>
 
 ```shell
 databoxer key <ACTION>
