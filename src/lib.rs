@@ -7,11 +7,11 @@
 pub use core::error::{Error, Result};
 pub use core::options;
 pub use core::encryption::{boxfile::Boxfile, cipher::{Checksum, Key, Nonce}};
-use self::core::{key, profile};
+use core::{key, profile};
 
+pub mod app;
 pub mod cli;
 mod core;
-pub mod app;
 
 /// Encrypts the file at the given path. Extra options can be provided to control the process
 ///

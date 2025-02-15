@@ -44,17 +44,17 @@ ensure safer key storage.
 
 ### 📦 "Boxfile" file format
 
-The encrypted files are "boxed" into a `boxfile` and stored in that way on the drive. A "boxfile" is a custom file
+The encrypted files are "boxed" into a `.box` file and stored in that way on the drive. A "boxfile" is a custom file
 format which uses different techniques in order to ensure safety of the data, verify its content integrity and embed
 additional information about the file. It is a way of obfuscating the stored data combined with giving the program
 its unique features.
 
-A `boxfile` consists of a *header*, *body* and *checksum*. 
+A `.box` file consists of a *header*, *body* and *checksum*. 
 
 - **Header** contains all the publicly available information about the file: version of the boxfile version used, length of
 random padding and per-file randomly generated `nonce`, which is user for encryption processes.
 
-- **Body** of the `boxfile` is made up from two things: the actual original file data and randomly generated padding. The
+- **Body** of the `.box` file is made up from two things: the actual original file data and randomly generated padding. The
 original data consists of original file name, extension, edit and access times, and the actual file contents. Padding
 is a randomly generated stream of bytes (from sizes 4-255) which acts as an obfuscation technique during encryption,
 as it combined with file data to make it harder to access original information and mislead the bad actor.
