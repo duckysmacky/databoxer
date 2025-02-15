@@ -31,14 +31,11 @@ jobs:
         if: runner.os == 'Windows'
         run: ren target\release\databoxer.exe databoxer-${{ runner.os }}.exe
 
-      - name: Upload Artifact
+      - name: Upload Artifact (Linux/macOS)
         uses: actions/upload-artifact@v4
         with:
           name: databoxer-${{ runner.os }}
-          path: |
-            databoxer-${{ runner.os }}
-            databoxer-${{ runner.os }}.exe
-          if-no-files-found: error
+          path: databoxer-*
 
   release:
     name: Create Release
