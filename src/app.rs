@@ -1,3 +1,5 @@
+//! Contains app-wide information and states, like run modes
+
 use std::sync::OnceLock;
 
 #[derive(Clone, PartialEq)]

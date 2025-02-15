@@ -8,7 +8,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "databoxer"
-path = "src/cli/main.rs"
+path = "src/main.rs"
 
 [dependencies]
 # cli
