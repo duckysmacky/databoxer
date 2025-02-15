@@ -1,18 +1,15 @@
 //! Contains handlers for the profile subcommand
 
 use clap::ArgMatches;
-use crate::cli::prompts;
-use crate::{exits_on, log_error, log_success, log_warn};
+use crate::{exits_on, log_error, log_success, log_warn, options};
 
 pub fn handle_profile_create(args: &ArgMatches) {
-    let password = match args.get_one::<String>("PASSWORD") {
-        None => prompts::prompt_password("Please enter a password for the new profile:"),
-        Some(password) => password.to_string()
-    };
-
     let name = args.get_one::<String>("NAME").expect("Profile name is required");
+    
+    let mut options = options::ProfileCreateOptions::default();
+    options.password = args.get_one::<String>("PASSWORD");
 
-    match crate::create_profile(name, &password) {
+    match crate::create_profile(name, options) {
         Ok(_) => log_success!("Successfully created new profile \"{}\"", name),
         Err(err) => {
             log_error!("Unable to create a new profile named \"{}\"", name);
@@ -24,12 +21,10 @@ pub fn handle_profile_create(args: &ArgMatches) {
 pub fn handle_profile_delete(args: &ArgMatches) {
     let name = args.get_one::<String>("NAME").expect("Profile name is required");
 
-    let password = match args.get_one::<String>("PASSWORD") {
-        None => prompts::prompt_password(&format!("Please enter the password for {}", name)),
-        Some(password) => password.to_string()
-    };
+    let mut options = options::ProfileDeleteOptions::default();
+    options.password = args.get_one::<String>("PASSWORD");
 
-    match crate::delete_profile(name, &password) {
+    match crate::delete_profile(name, options) {
         Ok(_) => log_success!("Successfully deleted profile \"{}\"", name),
         Err(err) => {
             log_error!("Unable to delete profile \"{}\"", name);
@@ -41,12 +36,10 @@ pub fn handle_profile_delete(args: &ArgMatches) {
 pub fn handle_profile_set(args: &ArgMatches) {
     let name = args.get_one::<String>("NAME").expect("Profile name is required");
 
-    let password = match args.get_one::<String>("PASSWORD") {
-        None => prompts::prompt_password(&format!("Please enter the password for {}", name)),
-        Some(password) => password.to_string()
-    };
-
-    match crate::select_profile(name, &password) {
+    let mut options = options::ProfileSelectOptions::default();
+    options.password = args.get_one::<String>("PASSWORD");
+    
+    match crate::select_profile(name, options) {
         Ok(_) => log_success!("Successfully set current profile to \"{}\"", name),
         Err(err) => {
             log_error!("Unable to switch to profile \"{}\"", name);

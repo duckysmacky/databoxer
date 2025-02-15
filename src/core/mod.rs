@@ -16,13 +16,14 @@ pub mod profile;
 pub mod key;
 pub mod options;
 pub mod logs;
+mod prompt;
 
 /// Encrypts the file at provided path using current profile's key. Password is required to verify
 /// and get access to current profile. Additional options can be supplied to change the encryption
 /// process
 pub fn encrypt(
         input_path: &Path,
-        password: &str,
+        password: &Option<&String>,
         keep_original_name: bool,
         output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> Result<()> {
@@ -34,7 +35,11 @@ pub fn encrypt(
     }
 
     let mut boxfile = boxfile::Boxfile::new(input_path)?;
-    let key = keys::get_key(password)?;
+    let password = match password {
+        None => prompt::prompt_password()?,
+        Some(p) => p.to_string()
+    };
+    let key = keys::get_key(&password)?;
     boxfile.encrypt_data(&key)?;
 
     let mut output_path = match output_paths {
@@ -69,12 +74,16 @@ pub fn encrypt(
 /// decryption process
 pub fn decrypt(
     input_path: &Path,
-    password: &str,
+    password: &Option<&String>,
     output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> Result<()> {
     log_info!("Starting decryption...");
     let mut boxfile = boxfile::Boxfile::parse(&input_path)?;
-    let key = keys::get_key(password)?;
+    let password = match password {
+        None => prompt::prompt_password()?,
+        Some(p) => p.to_string()
+    };
+    let key = keys::get_key(&password)?;
     boxfile.decrypt_data(&key)?;
     let (original_name, original_extension) = boxfile.file_info();
     let file_data = boxfile.file_data()?;

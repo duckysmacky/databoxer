@@ -3,6 +3,7 @@
 use std::{fs, io};
 use std::path::Path;
 use databoxer::Error;
+use databoxer::options;
 
 pub mod command;
 
@@ -13,13 +14,20 @@ pub const TEST_DIR: &str = "files/test";
 
 /// Global test environment setup (must be run before each test)
 pub fn setup() {
-    databoxer::create_profile(PROFILE_NAME, PASSWORD)
+    let password = String::from(PASSWORD);
+    let mut create_options = options::ProfileCreateOptions::default();
+    create_options.password = Some(&password);
+    
+    let mut select_options = options::ProfileSelectOptions::default();
+    select_options.password = Some(&password);
+    
+    databoxer::create_profile(PROFILE_NAME, create_options)
         .unwrap_or_else(|err| match err {
             Error::ProfileError(_) => println!("{}", err),
             _ => panic!("Unable to create test profile: {}", err)
         });
 
-    databoxer::select_profile(PROFILE_NAME, PASSWORD)
+    databoxer::select_profile(PROFILE_NAME, select_options)
         .unwrap_or_else(|err| match err {
             Error::ProfileError(_) => println!("{}", err),
             _ => panic!("Unable to select test profile: {}", err)
@@ -31,7 +39,11 @@ pub fn setup() {
 
 /// Global test environment cleanup (must be run after each test)
 pub fn cleanup() {
-    databoxer::delete_profile(PROFILE_NAME, PASSWORD)
+    let password = String::from(PASSWORD);
+    let mut delete_options = options::ProfileDeleteOptions::default();
+    delete_options.password = Some(&password);
+    
+    databoxer::delete_profile(PROFILE_NAME, delete_options)
         .unwrap_or_else(|err| match err {
             Error::ProfileError(_) => println!("{}", err),
             _ => panic!("Unable to delete test profile: {}", err)
