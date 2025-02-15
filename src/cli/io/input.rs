@@ -1,18 +1,20 @@
+use std::io::Write;
 use std::io;
 use crate::Result;
 
-pub fn get_hidden(prompt: &str) -> Result<String> {
-    todo!()
-}
-
-pub fn get_input(prompt: &str) -> Result<String> {
-    print!("{}", prompt);
-    let input = read_stdin()?;
+pub fn prompt_hidden(prompt_text: &str) -> Result<String> {
+    let mut stdout = io::stdout().lock();
+    writeln!(stdout, "{}: ", prompt_text)?;
+    let input = super::os::read_hidden()?;
     Ok(input)
 }
 
-fn read_stdin() -> io::Result<String> {
-    let mut buffer = String::new();
-    io::stdin().read_line(&mut buffer)?;
-    Ok(buffer.trim().to_string())
+pub fn prompt(prompt_text: &str) -> Result<String> {
+    print!("{}: ", prompt_text);
+
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+    println!();
+
+    Ok(input.trim().to_string())
 }

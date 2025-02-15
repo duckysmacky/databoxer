@@ -4,6 +4,7 @@ use std::time::Instant;
 
 pub mod logger;
 mod prompts;
+pub mod io;
 mod handlers;
 mod command;
 
