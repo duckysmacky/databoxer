@@ -35,7 +35,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: databoxer-${{ runner.os }}
-          path: databoxer-*
+          path: |
+            lockbox-${{ runner.os }}
+            lockbox-${{ runner.os }}.exe
 
   release:
     name: Create Release
