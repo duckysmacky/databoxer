@@ -12,6 +12,14 @@
 
 *The project is still very work-in-progress and the mentioned features could very well change during development*
 
+## 🪜 Table of content
+
+- [About](#-about)
+- [Features](#-features)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Development](#-development)
+
 ## 💡 About
 
 Databoxer aims to be a lightweight cross-platform solution for file encryption
@@ -63,21 +71,61 @@ as it combined with file data to make it harder to access original information a
 pre-encrypted file data. During the decryption process file contents are hashed again and compared with the original
 checksum to verify file data integrity.
 
+## 📂 Installation
+
+Current release: *v0.1.0*
+
+> [!NOTE]
+The current version provides all the main features of the project fully implemented, but with time many of the will be
+expanded upon and many new ones will be added. Since the project is still in development, many already existing features
+might and will change. Consider all version under `1.0.0` to be prone to many interface, functionality and API changes.
+
+### With Cargo
+
+This is the recommended way to install Databoxer
+
+```shell
+cargo install databoxer
+```
+
+### From releases
+
+1. Go to [Releases](https://github.com/duckysmacky/databoxer/releases)
+2. Select the version you want to download
+3. Download the binary for your system
+
+### As a library
+
+Alternately, Databoxer can be installed as a library for your project to use its API functions
+
+```shell
+cargo add databoxer
+```
+
+Databoxer is cross-platform and is supported on all major platforms (Windows, Linux and macOS)
+
 ## 🕹️ Usage
 
-Currently, the CLI is implemented and can be used for all major operations, but it is planned to have both *CLI* and *GUI*
-modes to appeal to a wider range of audience. 
+Currently, the program provides a CLI which is used for all major operations. The program can be run with
+`databoxer <COMMAND>`. The complete list of commands can be viewed with `databoxer --help`. Below are shown usage
+examples of some of the main commands.
 
-The complete list of commands can be viewed with `databoxer --help`. Below are shown just the most common commands.
+It is also planned in the future to implement a GUI interface to appeal to a wider range of audience and make the
+program more accessible for less advanced users. The GUI will be launched by running `databoxer` with no further
+arguments.
 
+Alternatively `databoxer` can be used as a *library* for using the API features of the program, since it already
+provides a proper API for the different run modes (CLI and GUI). The API is well-documented and provides all main
+functions and types through `databoxer::*`. Most functions use the `xOptions` struct for providing additional options
+for each `x` operation.
 
 ### Encrypting files
 
 <div>
-    <img width="50%" alt="encryption" src="media/gif/encryption-short.gif">
+    <img alt="encryption" src="media/gif/encryption-short.gif">
 </div>
 
-```bash
+```shell
 databoxer box <PATH>...
 ```
 
@@ -89,10 +137,10 @@ can specify the output location for each file with a `-o` flag
 ### Decrypting files
 
 <div>
-    <img width="50%" alt="decryption" src="media/gif/decryption-short.gif">
+    <img alt="decryption" src="media/gif/decryption-short.gif">
 </div>
 
-```bash
+```shell
 databoxer unbox <PATH>...
 ```
 
@@ -105,10 +153,10 @@ extension
 ### Configuring profiles
 
 <div>
-    <img width="50%" alt="profiles" src="media/gif/profile-creation-long.gif">
+    <img alt="profiles" src="media/gif/profile-creation-long.gif">
 </div>
 
-```bash
+```shell
 databoxer profile <ACTION> <NAME>
 ```
 
@@ -122,10 +170,10 @@ all other existing profiles.
 ### Manipulating encryption keys
 
 <div>
-    <img width="50%" alt="key" src="media/gif/key-set.gif">
+    <img alt="key" src="media/gif/key-set.gif">
 </div>
 
-```bash
+```shell
 databoxer key <ACTION>
 ```
 
@@ -146,12 +194,12 @@ completely change by the time it is fully released.
 *These plans could change during future development*
 
 - [x] User profile system
+- [x] `.box` file format
 - [x] Multiple profiles/keys support
 - [ ] Support for custom user config (using `config.toml`)
 - [ ] File data compression
 - [ ] Improved profile storage (SQLite?)
 - [ ] Batch file encryption (`boxfile` archive)
-- [ ] Multiple encryption algorithm support
 - [ ] Remote key storage support (Google Drive, etc)
 - [ ] OS-native toolchain support (GnuPG, Kleopatra, CryptoAPI, etc.)
 - [ ] GUI interface
