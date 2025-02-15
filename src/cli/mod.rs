@@ -8,16 +8,19 @@ mod handlers;
 mod command;
 
 pub fn run() {
-    let start_time = Instant::now();
     let global_args = &command::get_command().get_matches();
 
     logger::configure_logger(&global_args);
 
     /* BOX */
     if let Some(args) = global_args.subcommand_matches("box") {
+        let start_time = Instant::now();
         let (total, error) = handlers::handle_box(args);
 
+        let duration = start_time.elapsed();
         println!("[{}/{}] files encrypted", total - error, total);
+        println!("Total time taken: {:.2?}", duration);
+
         if total == error {
             std::process::exit(1);
         }
@@ -25,9 +28,13 @@ pub fn run() {
 
     /* UNBOX */
     if let Some(args) = global_args.subcommand_matches("unbox") {
+        let start_time = Instant::now();
         let (total, error) = handlers::handle_unbox(args);
 
+        let duration = start_time.elapsed();
         println!("[{}/{}] files decrypted", total - error, total);
+        println!("Total time taken: {:.2?}", duration);
+
         if total == error {
             std::process::exit(1);
         }
@@ -77,7 +84,4 @@ pub fn run() {
             handlers::handle_key_set(args);
         }
     }
-
-    let duration = start_time.elapsed();
-    println!("Time taken: {:.2?}", duration);
 }
