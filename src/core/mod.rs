@@ -154,6 +154,7 @@ pub fn get_information(
 
     let mut file_information = Vec::new();
     file_information.push(format!("Name: {:?}", header.name));
+    file_information.push(format!("OS: {:?}", header.user_os));
 
     if let Some(extension) = header.extension {
         file_information.push(format!("Extension: {:?}", extension));
