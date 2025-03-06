@@ -190,7 +190,7 @@ pub struct BoxfileHeader {
     /// The original name of the file
     pub name: OsString,
     /// The operating system on which the file was encrypted
-    pub user_os: UserOS,
+    pub source_os: SourceOS,
     /// The original extension of the file
     pub extension: Option<OsString>,
     /// The original create time of the file
@@ -214,14 +214,14 @@ impl BoxfileHeader {
             None => OsString::from("unknown"),
             Some(name) => OsString::from(name)
         };
-        let os = UserOS::from(std::env::consts::OS);
+        let os = SourceOS::from(std::env::consts::OS);
         let extension = file_path.extension().map(|ext| ext.to_os_string());
         let metadata = fs::metadata(file_path)?;
         
         Ok(BoxfileHeader {
             magic: header_info::MAGIC,
             name,
-            user_os: os,
+            source_os: os,
             extension,
             create_time: metadata.created().ok(),
             modify_time: metadata.modified().ok(),
@@ -241,16 +241,16 @@ impl BoxfileHeader {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum UserOS {
+pub enum SourceOS {
     WINDOWS, MACOS, UNIX
 }
 
-impl From<&str> for UserOS {
+impl From<&str> for SourceOS {
     fn from(os: &str) -> Self {
         match os {
-            "windows" => UserOS::WINDOWS,
-            "macos" => UserOS::MACOS,
-            _ => UserOS::UNIX,
+            "windows" => SourceOS::WINDOWS,
+            "macos" => SourceOS::MACOS,
+            _ => SourceOS::UNIX,
         }
     }
 }
