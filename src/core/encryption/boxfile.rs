@@ -1,11 +1,12 @@
 //! Contains implementation for the custom `boxfile` file format, it's header and
 //! additional information for parsing and serializing the custom file format.
 
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::Path;
 use std::ffi::OsString;
-use std::fs;
+use std::{fs, iter};
 use std::time::SystemTime;
 use crate::{log_debug, new_err, Checksum, Key, Nonce, Result};
 use crate::core::data::io;
@@ -64,8 +65,8 @@ impl Boxfile {
     pub fn new(file_path: &Path) -> Result<Self> {
         log_debug!("Initializing boxfile from {:?}", file_path);
         let file_data = io::read_bytes(&file_path)?;
-        let padding_len: u8 = (file_data.len() as u8 / 8) + 1;
-        let padding = Self::generate_padding(padding_len);
+        let padding = Self::generate_padding(file_data.len(), 512);
+        let padding_len = padding.len() as u16;
         let body: Box<[u8]> = [file_data, padding].concat().into();
         log_debug!("Boxfile body generated");
 
@@ -171,10 +172,16 @@ impl Boxfile {
         Ok(file_data.into())
     }
 
-    // TODO: generate padding based on the length of the cipher block size and data
-    /// Generates random padding of specified length
-    fn generate_padding(padding_len: u8) -> Vec<u8> {
-        vec![0u8; padding_len as usize]
+    /// Generates padding to append to the end of body before encruption according
+    /// to the PKCS standart algorithm: adds random padding bytes to fill out the block
+    /// size for the file data
+    fn generate_padding(data_len: usize, block_size: usize) -> Vec<u8> {
+        let padding_len = block_size - (data_len % block_size);
+        let mut rng = rand::rng();
+        let padding = iter::repeat_with(|| rng.random::<u8>())
+            .take(padding_len)
+            .collect::<Vec<u8>>();
+        padding
     }
 }
 
@@ -186,7 +193,7 @@ pub struct BoxfileHeader {
     /// Unique identifier for the file format including the used version
     magic: [u8; 4],
     /// The length of the generated padding
-    padding_len: u8,
+    padding_len: u16,
     /// The original name of the file
     pub name: OsString,
     /// The operating system on which the file was encrypted
@@ -207,7 +214,7 @@ pub struct BoxfileHeader {
 impl BoxfileHeader {
     pub fn new(
         file_path: &Path,
-        padding_len: u8,
+        padding_len: u16,
         nonce: Nonce 
     ) -> Result<Self> {
         let name = match file_path.file_stem() {
