@@ -19,7 +19,13 @@ mod core;
 /// Although it is better to exit on errors related with user authentication and profiles, as the
 /// program will simply not work without a user profile
 pub fn encrypt(file_path: &std::path::Path, options: &mut options::EncryptionOptions) -> Result<()> {
-    core::encrypt(file_path, &options.password, options.keep_original_name, &mut options.output_paths)
+    core::encrypt(
+        file_path,
+        &options.password,
+        options.keep_original_name, 
+        options.generate_padding,
+        &mut options.output_paths
+    )
 }
 
 /// Decrypts the file at the given path. Extra options can be provided to control the process.

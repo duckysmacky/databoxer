@@ -65,6 +65,11 @@ pub fn get_command() -> Command {
                 .help("Output the full relative path to the encrypted file")
                 .action(ArgAction::SetTrue)
             )
+            .arg(Arg::new("NO_PADDING")
+                .long("no-padding")
+                .help("Disable random padding generation for the .box file")
+                .action(ArgAction::SetTrue)
+            )
             // .arg(Arg::new("overwrite") // TODO
             //     .short('w')
             //     .long("overwrite")

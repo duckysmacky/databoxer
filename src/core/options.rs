@@ -7,6 +7,9 @@ pub struct EncryptionOptions<'a> {
     pub password: Option<&'a String>,
     /// Don't replace the name with a random UUID for the encrypted file
     pub keep_original_name: bool,
+    /// Generate random padding bytes and append them to the file. If set
+    /// to false, can save some disk space for the file
+    pub generate_padding: bool,
     /// Contains an output path for each file
     pub output_paths: Option<VecDeque<PathBuf>>
 }
@@ -16,6 +19,7 @@ impl Default for EncryptionOptions<'_> {
         EncryptionOptions {
             password: None,
             keep_original_name: false,
+            generate_padding: true,
             output_paths: None,
         }
     }

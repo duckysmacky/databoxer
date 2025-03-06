@@ -62,12 +62,18 @@ impl Boxfile {
     /// `Nonce` for later usage in encryption. Padding is also generated during this
     /// step and added at the end of the original file's data as a part of the body.
     /// Checksum is generated at the very end from the header and body content.
-    pub fn new(file_path: &Path) -> Result<Self> {
+    pub fn new(file_path: &Path, generate_padding: bool) -> Result<Self> {
         log_debug!("Initializing boxfile from {:?}", file_path);
         let file_data = io::read_bytes(&file_path)?;
-        let padding = Self::generate_padding(file_data.len(), 512);
-        let padding_len = padding.len() as u16;
-        let body: Box<[u8]> = [file_data, padding].concat().into();
+        let mut padding_len = 0;
+        let body: Box<[u8]> = match generate_padding {
+            true => {
+                let padding = Self::generate_padding(file_data.len(), 512);
+                padding_len = padding.len() as u16;
+                [file_data, padding].concat().into()
+            },
+            false => file_data.into()
+        };
         log_debug!("Boxfile body generated");
 
         let header = BoxfileHeader::new(

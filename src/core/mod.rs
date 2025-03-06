@@ -25,6 +25,7 @@ pub fn encrypt(
         input_path: &Path,
         password: &Option<&String>,
         keep_original_name: bool,
+        generate_padding: bool,
         output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> Result<()> {
     log_info!("Starting encryption...");
@@ -34,7 +35,7 @@ pub fn encrypt(
         }
     }
 
-    let mut boxfile = boxfile::Boxfile::new(input_path)?;
+    let mut boxfile = boxfile::Boxfile::new(input_path, generate_padding)?;
     let password = match password {
         None => prompt::prompt_password()?,
         Some(p) => p.to_string()
