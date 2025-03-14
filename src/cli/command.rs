@@ -70,6 +70,12 @@ pub fn get_command() -> Command {
                 .help("Disable random padding generation for the .box file")
                 .action(ArgAction::SetTrue)
             )
+            .arg(Arg::new("ENCRYPT_ORIGINAL_DATA")
+                .short('e')
+                .long("encrypt-original-data")
+                .help("Encrypt original file data (name, extension, OS, modify time, etc.)")
+                .action(ArgAction::SetTrue)
+            )
             // .arg(Arg::new("overwrite") // TODO
             //     .short('w')
             //     .long("overwrite")
@@ -88,11 +94,6 @@ pub fn get_command() -> Command {
             //     .long("exclude")
             //     .help("Exclude specific file patterns from being encrypted")
             //     .action(ArgAction::Set)
-            // )
-            // .arg(Arg::new("preserve-timestamp") // TODO
-            //     .long("preserve-timestamp")
-            //     .help("Retains the original file's timestamp when creating the encrypted file")
-            //     .action(ArgAction::SetTrue)
             // )
         )
         /* UNBOX SUBCOMMAND */
