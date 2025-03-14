@@ -17,7 +17,7 @@ mod unix {
             Ok(unsafe { term.assume_init() })
         }
         
-        let tty= File::open("/dev/tty")?;
+        let tty = File::open("/dev/tty")?;
         let file_desc = tty.as_raw_fd();
         let mut term = init_term(file_desc)?;
         

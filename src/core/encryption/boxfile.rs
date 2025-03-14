@@ -221,6 +221,9 @@ pub struct BoxfileHeader {
     magic: [u8; 4],
     /// The length of the generated padding
     padding_len: u16,
+    /// Randomly generated 12-byte `Nonce` used for encryption and decryption. Ensures
+    /// that no ciphertext generated using one key is the same
+    nonce: Nonce,
     /// The original name of the file
     #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub name: EncryptedField<OsString>,
@@ -242,9 +245,6 @@ pub struct BoxfileHeader {
     /// Is the original file data (name, extension, etc.) is encrypted. If so, file
     /// cannot be pre-parsed without decryption.
     pub encrypt_original_data: bool,
-    /// Randomly generated 12-byte `Nonce` used for encryption and decryption. Ensures
-    /// that no ciphertext generated using one key is the same
-    nonce: Nonce
 }
 
 impl BoxfileHeader {
@@ -322,6 +322,10 @@ impl BoxfileHeader {
     }
 }
 
+/// Enum representing a field in the `BoxfileHeader` which can be encrypted. Can contain plaintext
+/// (not encrypted) data, encrypted data and an empty value (in case if field can be `None` to
+/// avoid extra encryption). Only `Plaintext` values should be interacted with, while everything
+/// else to be considered non-relevant for outside interaction
 #[derive(Serialize, Deserialize, Debug)]
 pub enum EncryptedField<T> {
     Plaintext(T),
@@ -333,6 +337,9 @@ impl<T> EncryptedField<T>
 where
     T: serde::Serialize + for<'de> serde::Deserialize<'de>
 {
+    /// Encrypts the field value and stores it as an array of bytes within itself. Accepts an
+    /// encryption function to operate on data. This is made to reduce the amount of repeating
+    /// argument passing from one field to the other.
     pub fn encrypt(&mut self, encrypt_function: impl Fn(&[u8]) -> Result<Vec<u8>>) -> Result<()> {
         if let EncryptedField::Plaintext(data) = self {
             let bytes = bincode::serialize(data)?;
@@ -341,7 +348,10 @@ where
         }
         Ok(())
     }
-    
+
+    /// Decrypts the field value and restores the original data type `T` within itself. Accepts a
+    /// decryption function to operate on data. This is made to reduce the amount of repeating
+    /// argument passing from one field to the other.
     pub fn decrypt(&mut self, decrypt_function: impl Fn(&[u8]) -> Result<Vec<u8>>) -> Result<()> {
         if let EncryptedField::Encrypted(encrypted) = self {
             let decrypted = decrypt_function(&encrypted)?;
@@ -351,11 +361,15 @@ where
         Ok(())
     }
 
+    /// Returns whether the field is empty (is an `Empty` value). Used together with serde to skip
+    /// empty field values to save disk space
     pub fn is_empty(&self) -> bool {
         matches!(self, EncryptedField::Empty)
     }
 }
 
+/// Automatically convert from `Option<T>` to `Plaintext(T)` is there is `Some(value)`, else will
+/// covert to `Empty`
 impl<T> From<Option<T>> for EncryptedField<T> {
     fn from(value: Option<T>) -> Self {
         match value {
