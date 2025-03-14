@@ -62,7 +62,7 @@ impl Boxfile {
     /// `Nonce` for later usage in encryption. Padding is also generated during this
     /// step and added at the end of the original file's data as a part of the body.
     /// Checksum is generated at the very end from the header and body content.
-    pub fn new(file_path: &Path, generate_padding: bool) -> Result<Self> {
+    pub fn new(file_path: &Path, generate_padding: bool, encrypt_header_data: bool) -> Result<Self> {
         log_debug!("Initializing boxfile from {:?}", file_path);
         let file_data = io::read_bytes(&file_path)?;
         let mut padding_len = 0;
@@ -79,7 +79,8 @@ impl Boxfile {
         let header = BoxfileHeader::new(
             file_path,
             padding_len,
-            cipher::generate_nonce()
+            cipher::generate_nonce(),
+            encrypt_header_data,
         )?;
         log_debug!("Boxfile header generated: {:?}", &header);
 
@@ -119,8 +120,16 @@ impl Boxfile {
 
     /// Returns the information about the file contained within the `boxfile`: original file name, 
     /// and extension
-    pub fn file_info(&self) -> (&OsString, &Option<OsString>) {
-        (&self.header.name, &self.header.extension)
+    pub fn file_info(&self) -> (Option<&OsString>, Option<&OsString>) {
+        let name = match &self.header.name {
+            EncryptedField::Plaintext(value) => Some(value),
+            _ => None,
+        };
+        let extension = match &self.header.extension {
+            EncryptedField::Plaintext(value) => Some(value),
+            _ => None,
+        };
+        (name, extension)
     }
     
     /// Verifies checksum for the `boxfile` by generating new checksum for current data and
@@ -153,16 +162,28 @@ impl Boxfile {
     /// using the provided encryption key
     pub fn encrypt_data(&mut self, key: &Key) -> Result<()> {
         log_debug!("Encrypting boxfile");
+
         let encrypted_body = cipher::encrypt(key, &self.header.nonce, &self.body)?;
         self.body = encrypted_body.into();
+
+        if self.header.encrypt_original_data {
+            self.header.encrypt_data(key)?;
+        }
+
         Ok(())
     }
     
     /// Decrypts the body of the `boxfile` (data + padding) using the provided encryption key
     pub fn decrypt_data(&mut self, key: &Key) -> Result<()> {
         log_debug!("Decrypting boxfile");
+
         let decrypted_body = cipher::decrypt(key, &self.header.nonce, &self.body)?;
         self.body = decrypted_body.into();
+
+        if self.header.encrypt_original_data {
+            self.header.decrypt_data(key)?;
+        }
+
         Ok(())
     }
 
@@ -201,17 +222,26 @@ pub struct BoxfileHeader {
     /// The length of the generated padding
     padding_len: u16,
     /// The original name of the file
-    pub name: OsString,
+    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
+    pub name: EncryptedField<OsString>,
     /// The operating system on which the file was encrypted
-    pub source_os: SourceOS,
+    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
+    pub source_os: EncryptedField<SourceOS>,
     /// The original extension of the file
-    pub extension: Option<OsString>,
+    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
+    pub extension: EncryptedField<OsString>,
     /// The original create time of the file
-    pub create_time: Option<SystemTime>,
+    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
+    pub create_time: EncryptedField<SystemTime>,
     /// The original modify time of the file
-    pub modify_time: Option<SystemTime>,
+    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
+    pub modify_time: EncryptedField<SystemTime>,
     /// The original access time of the file
-    pub access_time: Option<SystemTime>,
+    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
+    pub access_time: EncryptedField<SystemTime>,
+    /// Is the original file data (name, extension, etc.) is encrypted. If so, file
+    /// cannot be pre-parsed without decryption.
+    pub encrypt_original_data: bool,
     /// Randomly generated 12-byte `Nonce` used for encryption and decryption. Ensures
     /// that no ciphertext generated using one key is the same
     nonce: Nonce
@@ -221,7 +251,8 @@ impl BoxfileHeader {
     pub fn new(
         file_path: &Path,
         padding_len: u16,
-        nonce: Nonce 
+        nonce: Nonce,
+        encrypt_original_data: bool
     ) -> Result<Self> {
         let name = match file_path.file_stem() {
             None => OsString::from("unknown"),
@@ -233,12 +264,13 @@ impl BoxfileHeader {
         
         Ok(BoxfileHeader {
             magic: header_info::MAGIC,
-            name,
-            source_os: os,
-            extension,
-            create_time: metadata.created().ok(),
-            modify_time: metadata.modified().ok(),
-            access_time: metadata.accessed().ok(),
+            encrypt_original_data,
+            name: EncryptedField::Plaintext(name),
+            source_os: EncryptedField::Plaintext(os),
+            extension: extension.into(),
+            create_time: metadata.created().ok().into(),
+            modify_time: metadata.modified().ok().into(),
+            access_time: metadata.accessed().ok().into(),
             padding_len,
             nonce
         })
@@ -250,6 +282,86 @@ impl BoxfileHeader {
         let bytes = bincode::serialize(&self)
             .map_err(|err| new_err!(SerializeError: HeaderParseError, err))?;
         Ok(bytes)
+    }
+
+    /// Encrypts the file's original data within the header (file name, extension, etc.)
+    /// using the provided encryption key
+    pub fn encrypt_data(&mut self, key: &Key) -> Result<()> {
+        log_debug!("Encrypting header data");
+        
+        // this function is used for encryption within the inner wrapper to avoid boilerplate. same
+        // with decryption
+        let func = |data: &[u8]| cipher::encrypt(key, &self.nonce, data);
+
+        if self.encrypt_original_data {
+            self.name.encrypt(func)?;
+            self.source_os.encrypt(func)?;
+            self.extension.encrypt(func)?;
+            self.create_time.encrypt(func)?;
+            self.modify_time.encrypt(func)?;
+            self.access_time.encrypt(func)?;
+        }
+        Ok(())
+    }
+    
+    /// Decrypts the file's original data using the provided encryption key
+    pub fn decrypt_data(&mut self, key: &Key) -> Result<()> {
+        log_debug!("Decrypting header data");
+        
+        let func = |data: &[u8]| cipher::decrypt(key, &self.nonce, data);
+
+        if self.encrypt_original_data {
+            self.name.decrypt(func)?;
+            self.source_os.decrypt(func)?;
+            self.extension.decrypt(func)?;
+            self.create_time.decrypt(func)?;
+            self.modify_time.decrypt(func)?;
+            self.access_time.decrypt(func)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum EncryptedField<T> {
+    Plaintext(T),
+    Encrypted(Box<[u8]>),
+    Empty
+}
+
+impl<T> EncryptedField<T>
+where
+    T: serde::Serialize + for<'de> serde::Deserialize<'de>
+{
+    pub fn encrypt(&mut self, encrypt_function: impl Fn(&[u8]) -> Result<Vec<u8>>) -> Result<()> {
+        if let EncryptedField::Plaintext(data) = self {
+            let bytes = bincode::serialize(data)?;
+            let encrypted = encrypt_function(&bytes)?;
+            *self = EncryptedField::Encrypted(encrypted.into());
+        }
+        Ok(())
+    }
+    
+    pub fn decrypt(&mut self, decrypt_function: impl Fn(&[u8]) -> Result<Vec<u8>>) -> Result<()> {
+        if let EncryptedField::Encrypted(encrypted) = self {
+            let decrypted = decrypt_function(&encrypted)?;
+            let data: T = bincode::deserialize(&decrypted)?;
+            *self = EncryptedField::Plaintext(data);
+        }
+        Ok(())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        matches!(self, EncryptedField::Empty)
+    }
+}
+
+impl<T> From<Option<T>> for EncryptedField<T> {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(v) => EncryptedField::Plaintext(v),
+            None => EncryptedField::Empty,
+        }
     }
 }
 

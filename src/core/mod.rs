@@ -5,6 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use chrono::{DateTime, Local};
+use encryption::boxfile::EncryptedField;
 use crate::core::data::{io, keys};
 use crate::core::encryption::boxfile;
 use crate::{log_debug, log_info, log_warn, new_err, Result};
@@ -26,6 +27,7 @@ pub fn encrypt(
         password: &Option<&String>,
         keep_original_name: bool,
         generate_padding: bool,
+        encrypt_original_data: bool,
         output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> Result<()> {
     log_info!("Starting encryption...");
@@ -35,7 +37,7 @@ pub fn encrypt(
         }
     }
 
-    let mut boxfile = boxfile::Boxfile::new(input_path, generate_padding)?;
+    let mut boxfile = boxfile::Boxfile::new(input_path, generate_padding, encrypt_original_data)?;
     let password = match password {
         None => prompt::prompt_password()?,
         Some(p) => p.to_string()
@@ -102,7 +104,9 @@ pub fn decrypt(
                 log_debug!("Writing to custom output path: {:?}", path);
 
                 if path.file_name() == None {
-                    path.set_file_name(original_name);
+                    if let Some(name) = original_name {
+                        path.set_file_name(name);
+                    }
                     if let Some(extension) = original_extension {
                         path.set_extension(extension);
                     }
@@ -114,7 +118,9 @@ pub fn decrypt(
                 path
             } else {
                 let mut path = input_path.to_path_buf();
-                path.set_file_name(original_name);
+                if let Some(name) = original_name {
+                    path.set_file_name(name);
+                }
                 if let Some(extension) = original_extension {
                     path.set_extension(extension);
                 }
@@ -123,7 +129,9 @@ pub fn decrypt(
         },
         None => {
             let mut path = input_path.to_path_buf();
-            path.set_file_name(original_name);
+            if let Some(name) = original_name {
+                path.set_file_name(name);
+            }
             if let Some(extension) = original_extension {
                 path.set_extension(extension);
             }
@@ -154,28 +162,42 @@ pub fn get_information(
     let header = boxfile.header;
 
     let mut file_information = Vec::new();
-    file_information.push(format!("Name: {:?}", header.name));
-    file_information.push(format!("OS: {:?}", header.source_os));
 
-    if let Some(extension) = header.extension {
+    if header.encrypt_original_data {
+        file_information.push("Original file data seems to be encrypted. Unavaliable to retrieve file information!".to_string());   
+    }
+
+    if let EncryptedField::Plaintext(name) = header.name {
+        file_information.push(format!("Name: {:?}", name));
+    } else {
+        file_information.push("Name: Unknown".to_string());
+    }
+
+    if let EncryptedField::Plaintext(extension) = header.extension {
         file_information.push(format!("Extension: {:?}", extension));
     } else {
         file_information.push("Extension: None".to_string());
     }
 
-    if let Some(system_time) = header.create_time {
+    if let EncryptedField::Plaintext(source_os) = header.source_os {
+        file_information.push(format!("OS: {:?}", source_os));
+    } else {
+        file_information.push("OS: Unknown".to_string());
+    }
+
+    if let EncryptedField::Plaintext(system_time) = header.create_time {
         file_information.push(format!("Create time: {}", format_time(system_time)));
     } else if show_unknown {
         file_information.push("Create time: Unknown".to_string());
     }
 
-    if let Some(system_time) = header.modify_time {
+    if let EncryptedField::Plaintext(system_time) = header.modify_time {
         file_information.push(format!("Modify time: {}", format_time(system_time)));
     } else if show_unknown {
         file_information.push("Modify time: Unknown".to_string());
     }
 
-    if let Some(system_time) = header.access_time {
+    if let EncryptedField::Plaintext(system_time) = header.access_time {
         file_information.push(format!("Access time: {}", format_time(system_time)));
     } else if show_unknown {
         file_information.push("Access time: Unknown".to_string());

@@ -122,6 +122,12 @@ impl From<toml::de::Error> for Error {
     }
 }
 
+impl From<bincode::Error> for Error {
+    fn from(err: bincode::Error) -> Self {
+        Error::SerializeError(SerializeErrorKind::BincodeError(err.to_string()))
+    }
+}
+
 #[derive(Debug)]
 pub enum IOErrorKind {
     /// The std IO error (std::io::Error)
@@ -220,6 +226,7 @@ pub enum SerializeErrorKind {
     TOMLParseError(String),
     BoxfileParseError(String),
     HeaderParseError(String),
+    BincodeError(String),
 }
 
 impl Display for SerializeErrorKind {
@@ -229,6 +236,7 @@ impl Display for SerializeErrorKind {
             SerializeErrorKind::TOMLParseError(s) => write!(f, "Unable to parse a TOML file:\n{}", s),
             SerializeErrorKind::BoxfileParseError(s) => write!(f, "Unable to parse a boxfile:\n{}", s),
             SerializeErrorKind::HeaderParseError(s) => write!(f, "Unable to parse a boxfile header:\n{}", s),
+            SerializeErrorKind::BincodeError(s) => write!(f, "Bincode (de)serialization error:\n{}", s),
         }
     }
 }
