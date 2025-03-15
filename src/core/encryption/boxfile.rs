@@ -229,7 +229,7 @@ pub struct BoxfileHeader {
     pub name: EncryptedField<OsString>,
     /// The operating system on which the file was encrypted
     #[serde(skip_serializing_if = "EncryptedField::is_empty")]
-    pub source_os: EncryptedField<SourceOS>,
+    pub source_os: EncryptedField<OS>,
     /// The original extension of the file
     #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub extension: EncryptedField<OsString>,
@@ -258,7 +258,7 @@ impl BoxfileHeader {
             None => OsString::from("unknown"),
             Some(name) => OsString::from(name)
         };
-        let os = SourceOS::from(std::env::consts::OS);
+        let os = OS::get();
         let extension = file_path.extension().map(|ext| ext.to_os_string());
         let metadata = fs::metadata(file_path)?;
         
@@ -379,17 +379,26 @@ impl<T> From<Option<T>> for EncryptedField<T> {
     }
 }
 
+/// Enum representing one of the possible operating systems
 #[derive(Serialize, Deserialize, Debug)]
-pub enum SourceOS {
-    WINDOWS, MACOS, UNIX
+pub enum OS {
+    WINDOWS, MACOS, LINUX, OTHER
 }
 
-impl From<&str> for SourceOS {
-    fn from(os: &str) -> Self {
+impl OS {
+    /// Fetches current operating system and returns it as an `OS` enum
+    pub fn get() -> Self {
+        let os = std::env::consts::OS;
         match os {
-            "windows" => SourceOS::WINDOWS,
-            "macos" => SourceOS::MACOS,
-            _ => SourceOS::UNIX,
+            "windows" => OS::WINDOWS,
+            "macos" => OS::MACOS,
+            "linux" => OS::LINUX,
+            _ => OS::OTHER,
         }
+    }
+
+    /// Checks whether this is a Unix-like OS
+    pub fn is_unix(&self) -> bool {
+        matches!(self, OS::MACOS | OS::LINUX)
     }
 }
