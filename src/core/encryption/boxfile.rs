@@ -10,6 +10,7 @@ use std::{fs, iter};
 use std::time::SystemTime;
 use crate::{log_debug, new_err, Checksum, Key, Nonce, Result};
 use crate::core::data::io;
+use crate::core::os::OS;
 use crate::core::utils;
 use super::cipher;
 
@@ -199,8 +200,8 @@ impl Boxfile {
         Ok(file_data.into())
     }
 
-    /// Generates padding to append to the end of body before encruption according
-    /// to the PKCS standart algorithm: adds random padding bytes to fill out the block
+    /// Generates padding to append to the end of body before encryption according
+    /// to the PKCS standard algorithm: adds random padding bytes to fill out the block
     /// size for the file data
     fn generate_padding(data_len: usize, block_size: usize) -> Vec<u8> {
         let padding_len = block_size - (data_len % block_size);
@@ -376,29 +377,5 @@ impl<T> From<Option<T>> for EncryptedField<T> {
             Some(v) => EncryptedField::Plaintext(v),
             None => EncryptedField::Empty,
         }
-    }
-}
-
-/// Enum representing one of the possible operating systems
-#[derive(Serialize, Deserialize, Debug)]
-pub enum OS {
-    WINDOWS, MACOS, LINUX, OTHER
-}
-
-impl OS {
-    /// Fetches current operating system and returns it as an `OS` enum
-    pub fn get() -> Self {
-        let os = std::env::consts::OS;
-        match os {
-            "windows" => OS::WINDOWS,
-            "macos" => OS::MACOS,
-            "linux" => OS::LINUX,
-            _ => OS::OTHER,
-        }
-    }
-
-    /// Checks whether this is a Unix-like OS
-    pub fn is_unix(&self) -> bool {
-        matches!(self, OS::MACOS | OS::LINUX)
     }
 }

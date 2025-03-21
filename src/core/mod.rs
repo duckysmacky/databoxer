@@ -18,6 +18,7 @@ pub mod key;
 pub mod options;
 pub mod logs;
 mod prompt;
+mod os;
 
 /// Encrypts the file at provided path using current profile's key. Password is required to verify
 /// and get access to current profile. Additional options can be supplied to change the encryption

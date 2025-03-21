@@ -90,7 +90,7 @@ impl DataboxerConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::data::os;
+    use crate::core::os::data;
     use super::*;
 
     #[test]
@@ -98,7 +98,7 @@ mod tests {
     /// Creates the `config.toml` file in the program configuration directory and writes the
     /// default configuration to it
     fn write_default_config() {
-        let config_directory = os::get_config_dir().expect("Cannot get config directory");
+        let config_directory = data::get_config_dir().expect("Cannot get config directory");
         let config = DataboxerConfig::import(config_directory);
 
         assert!(config.is_ok())

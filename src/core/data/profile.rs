@@ -259,7 +259,7 @@ impl Profile {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::data::os;
+    use crate::core::os::data;
     use super::*;
 
     #[test]
@@ -267,7 +267,7 @@ mod tests {
     /// Creates the `profiles.json` file in the program data directory and fills it with default
     /// information
     fn write_default_profiles() {
-        let data_directory = os::get_data_dir().expect("Cannot get data directory");
+        let data_directory = data::get_data_dir().expect("Cannot get data directory");
         let config = DataboxerProfiles::import(data_directory);
 
         assert!(config.is_ok())
