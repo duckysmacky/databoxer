@@ -16,10 +16,10 @@ use super::cipher;
 mod header_info {
     //! Constants for the header: current file format version and unique file
     //! identifier (magic)
-    /// Version of the `boxfile` format being used for backwards compatibility
-    pub const VERSION: u8 = 1;
     /// Unique identifier for the `boxfile` file format
-    pub const MAGIC: [u8; 4] = [b'B', b'O', b'X', VERSION];
+    pub const MAGIC: [u8; 3] = [b'B', b'O', b'X'];
+    /// The current version of the `boxfile` format being used for backwards compatibility
+    pub const CURRENT_VERSION: u8 = 1;
 }
 
 /// Struct representing a `boxfile` structure. A "boxfile" is the custom file 
@@ -105,13 +105,24 @@ impl Boxfile {
 
         if let Some(extension) = file_path.extension() {
             if extension != "box" {
-                return Err(new_err!(InvalidInput: InvalidFile, "Not a .box file"))
+                log_warn!("Target file extension is not \".box\"");
             }
-        } else {
-            return Err(new_err!(InvalidInput: InvalidFile, "Not a .box file"))
         }
 
         let bytes = io::read_bytes(file_path)?;
+        if bytes.len() < 4 {
+            return Err(new_err!(InvalidInput: InvalidFile, "Too small to be parsed correctly"))
+        }
+        
+        let magic = &bytes[..3];
+        if magic != &header_info::MAGIC[..3] {
+            return Err(new_err!(InvalidInput: InvalidFile, "Not a valid boxfile"))
+        }
+        
+        let version = &bytes[3];
+        if version != &header_info::CURRENT_VERSION {
+            log_warn!("Target file uses a different boxfile version");
+        }
 
         // TODO: add custom configuration options
         let config = bincode::config::standard();
@@ -223,8 +234,10 @@ impl Boxfile {
 /// file name and extension and generated `Nonce` for encryption/decryption uniqueness
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BoxfileHeader {
-    /// Unique identifier for the file format including the used version
-    magic: [u8; 4],
+    /// Unique identifier for the file format
+    magic: [u8; 3],
+    /// Version of the current file format protocol being used
+    pub version: u8,
     /// The length of the generated padding
     padding_len: u16,
     /// Randomly generated 12-byte `Nonce` used for encryption and decryption. Ensures
@@ -297,6 +310,7 @@ impl BoxfileHeader {
         
         Ok(BoxfileHeader {
             magic: header_info::MAGIC,
+            version: header_info::CURRENT_VERSION,
             encrypt_original_data,
             name: EncryptedField::Plaintext(name),
             source_os: EncryptedField::Plaintext(os),
