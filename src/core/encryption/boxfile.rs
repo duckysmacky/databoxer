@@ -102,19 +102,23 @@ impl Boxfile {
     /// Parses the provided file, tries to deserialize it and returns a parsed `boxfile`.
     pub fn parse(file_path: &Path) -> Result<Self> {
         log_debug!("Parsing boxfile from {:?}", file_path);
+
         if let Some(extension) = file_path.extension() {
             if extension != "box" {
-                return Err(new_err!(InvalidInput: InvalidFile, "Not encrypted"))
+                return Err(new_err!(InvalidInput: InvalidFile, "Not a .box file"))
             }
         } else {
-                return Err(new_err!(InvalidInput: InvalidFile, "Not encrypted"))
+            return Err(new_err!(InvalidInput: InvalidFile, "Not a .box file"))
         }
 
         let bytes = io::read_bytes(file_path)?;
-        let boxfile: Boxfile = bincode::deserialize(&bytes)
-            .map_err(|err| new_err!(SerializeError: BoxfileParseError, err))?;
-        log_debug!("Boxfile deserialized");
 
+        // TODO: add custom configuration options
+        let config = bincode::config::standard();
+        let (boxfile, _bytes): (Boxfile, usize) = bincode::serde::decode_from_slice(&bytes, config)
+            .map_err(|err| new_err!(SerializeError: BoxfileParseError, err))?;
+
+        log_debug!("Boxfile deserialized");
         Ok(boxfile)
     }
 
@@ -151,7 +155,9 @@ impl Boxfile {
     /// Serializes self and writes to specified file
     pub fn save_to(&self, path: &Path) -> Result<()> {
         log_debug!("Serializing and saving boxfile to {:?}", path);
-        let bytes = bincode::serialize(&self)
+
+        let config = bincode::config::standard();
+        let bytes = bincode::serde::encode_to_vec(&self, config)
             .map_err(|err| new_err!(SerializeError: BoxfileParseError, err))?;
         io::write_bytes(path, &bytes, true)?;
 
@@ -226,27 +232,21 @@ pub struct BoxfileHeader {
     nonce: Nonce,
     /// The original name of the file
     #[serde(default)]
-    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub name: EncryptedField<String>,
     /// The operating system on which the file was encrypted
     #[serde(default)]
-    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub source_os: EncryptedField<OS>,
     /// The original extension of the file
     #[serde(default)]
-    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub extension: EncryptedField<String>,
     /// The original create time of the file
     #[serde(default)]
-    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub create_time: EncryptedField<SystemTime>,
     /// The original modify time of the file
     #[serde(default)]
-    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub modify_time: EncryptedField<SystemTime>,
     /// The original access time of the file
     #[serde(default)]
-    #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub access_time: EncryptedField<SystemTime>,
     /// Is the original file data (name, extension, etc.) is encrypted. If so, file
     /// cannot be pre-parsed without decryption.
@@ -312,8 +312,11 @@ impl BoxfileHeader {
     /// Returns the header serialized as plain bytes
     pub fn as_bytes(&self) -> Result<Vec<u8>> {
         log_debug!("Serializing Boxfile header");
-        let bytes = bincode::serialize(&self)
-            .map_err(|err| new_err!(SerializeError: HeaderParseError, err))?;
+
+        let config = bincode::config::standard();
+        let bytes = bincode::serde::encode_to_vec(&self, config)?;
+
+        log_debug!("Boxfile header successfully serialized");
         Ok(bytes)
     }
 
@@ -361,9 +364,9 @@ impl BoxfileHeader {
 /// else to be considered non-relevant for outside interaction
 #[derive(Serialize, Deserialize, Debug)]
 pub enum EncryptedField<T> {
+    Empty,
     Plaintext(T),
     Encrypted(Box<[u8]>),
-    Empty
 }
 
 impl<T> EncryptedField<T>
@@ -375,7 +378,8 @@ where
     /// argument passing from one field to the other.
     pub fn encrypt(&mut self, encrypt_function: impl Fn(&[u8]) -> Result<Vec<u8>>) -> Result<()> {
         if let EncryptedField::Plaintext(data) = self {
-            let bytes = bincode::serialize(data)?;
+            let config = bincode::config::standard();
+            let bytes = bincode::serde::encode_to_vec(data, config)?;
             let encrypted = encrypt_function(&bytes)?;
             *self = EncryptedField::Encrypted(encrypted.into());
         }
@@ -388,7 +392,8 @@ where
     pub fn decrypt(&mut self, decrypt_function: impl Fn(&[u8]) -> Result<Vec<u8>>) -> Result<()> {
         if let EncryptedField::Encrypted(encrypted) = self {
             let decrypted = decrypt_function(&encrypted)?;
-            let data: T = bincode::deserialize(&decrypted)?;
+            let config = bincode::config::standard();
+            let (data, _): (T, usize) = bincode::serde::decode_from_slice(&decrypted, config)?;
             *self = EncryptedField::Plaintext(data);
         }
         Ok(())

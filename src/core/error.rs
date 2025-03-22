@@ -86,7 +86,7 @@ impl Display for Error {
             Error::InvalidData(e) => write!(f, "Invalid data: {}", e),
             Error::InvalidInput(e) => write!(f, "Invalid input provided: {}", e),
             Error::EncryptionError(e) => write!(f, "Encryption error: {}", e),
-            Error::SerializeError(e) => write!(f, "Serialization error: {}", e),
+            Error::SerializeError(e) => write!(f, "{}", e),
             Error::ProfileError(e) => write!(f, "Profile error: {}", e),
             Error::ConfigError(e) => write!(f, "Configuration error: {}", e),
         }
@@ -122,9 +122,15 @@ impl From<toml::de::Error> for Error {
     }
 }
 
-impl From<bincode::Error> for Error {
-    fn from(err: bincode::Error) -> Self {
-        Error::SerializeError(SerializeErrorKind::BincodeError(err.to_string()))
+impl From<bincode::error::EncodeError> for Error {
+    fn from(err: bincode::error::EncodeError) -> Self {
+        Error::SerializeError(SerializeErrorKind::EncodingError(err.to_string()))
+    }
+}
+
+impl From<bincode::error::DecodeError> for Error {
+    fn from(err: bincode::error::DecodeError) -> Self {
+        Error::SerializeError(SerializeErrorKind::DecodingError(err.to_string()))
     }
 }
 
@@ -132,9 +138,9 @@ impl From<bincode::Error> for Error {
 pub enum IOErrorKind {
     /// The std IO error (std::io::Error)
     StdError(IOErrorContainer),
-    /// The privided file was not found
+    /// The provided file was not found
     NotFound(PathBuf),
-    /// The privided file is not supported for operations
+    /// The provided file is not supported for operations
     NotSupported(PathBuf),
 }
 
@@ -225,18 +231,18 @@ pub enum SerializeErrorKind {
     JSONParseError(String, usize, usize),
     TOMLParseError(String),
     BoxfileParseError(String),
-    HeaderParseError(String),
-    BincodeError(String),
+    EncodingError(String),
+    DecodingError(String),
 }
 
 impl Display for SerializeErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            SerializeErrorKind::JSONParseError(s, l, c) => write!(f, "Unable to parse a JSON file (line {}, column {}):\n{}", l, c, s),
-            SerializeErrorKind::TOMLParseError(s) => write!(f, "Unable to parse a TOML file:\n{}", s),
-            SerializeErrorKind::BoxfileParseError(s) => write!(f, "Unable to parse a boxfile:\n{}", s),
-            SerializeErrorKind::HeaderParseError(s) => write!(f, "Unable to parse a boxfile header:\n{}", s),
-            SerializeErrorKind::BincodeError(s) => write!(f, "Bincode (de)serialization error:\n{}", s),
+            SerializeErrorKind::JSONParseError(s, line, column) => write!(f, "Error parsing JSON file ({}, {}): {}", line, column, s),
+            SerializeErrorKind::TOMLParseError(s) => write!(f, "Error parsing TOML file: {}", s),
+            SerializeErrorKind::BoxfileParseError(s) => write!(f, "Error parsing boxfile: {}", s),
+            SerializeErrorKind::EncodingError(s) => write!(f, "Unable to encode data: {}", s),
+            SerializeErrorKind::DecodingError(s) => write!(f, "Unable to decode data: {}", s),
         }
     }
 }
@@ -286,6 +292,11 @@ pub fn print_error(err: &Error) {
         },
         Error::ConfigError(_) => {
             log_warn!("Please check the config file for any mistakes and try again");
+        }
+        Error::EncryptionError(kind) => {
+            if let EncryptionErrorKind::CipherError(_) = kind {
+                log_warn!("Please check if the correct profile is used");
+            }
         }
         _ => {}
     }
