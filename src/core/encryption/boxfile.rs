@@ -5,10 +5,9 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::Path;
-use std::ffi::OsString;
 use std::{fs, iter};
 use std::time::SystemTime;
-use crate::{log_debug, new_err, Checksum, Key, Nonce, Result};
+use crate::{log_debug, log_warn, new_err, Checksum, Key, Nonce, Result};
 use crate::core::data::io;
 use crate::core::os::OS;
 use crate::core::utils;
@@ -121,7 +120,7 @@ impl Boxfile {
 
     /// Returns the information about the file contained within the `boxfile`: original file name, 
     /// and extension
-    pub fn file_info(&self) -> (Option<&OsString>, Option<&OsString>) {
+    pub fn file_info(&self) -> (Option<&String>, Option<&String>) {
         let name = match &self.header.name {
             EncryptedField::Plaintext(value) => Some(value),
             _ => None,
@@ -226,21 +225,27 @@ pub struct BoxfileHeader {
     /// that no ciphertext generated using one key is the same
     nonce: Nonce,
     /// The original name of the file
+    #[serde(default)]
     #[serde(skip_serializing_if = "EncryptedField::is_empty")]
-    pub name: EncryptedField<OsString>,
+    pub name: EncryptedField<String>,
     /// The operating system on which the file was encrypted
+    #[serde(default)]
     #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub source_os: EncryptedField<OS>,
     /// The original extension of the file
+    #[serde(default)]
     #[serde(skip_serializing_if = "EncryptedField::is_empty")]
-    pub extension: EncryptedField<OsString>,
+    pub extension: EncryptedField<String>,
     /// The original create time of the file
+    #[serde(default)]
     #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub create_time: EncryptedField<SystemTime>,
     /// The original modify time of the file
+    #[serde(default)]
     #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub modify_time: EncryptedField<SystemTime>,
     /// The original access time of the file
+    #[serde(default)]
     #[serde(skip_serializing_if = "EncryptedField::is_empty")]
     pub access_time: EncryptedField<SystemTime>,
     /// Is the original file data (name, extension, etc.) is encrypted. If so, file
@@ -255,13 +260,40 @@ impl BoxfileHeader {
         nonce: Nonce,
         encrypt_original_data: bool
     ) -> Result<Self> {
-        let name = match file_path.file_stem() {
-            None => OsString::from("unknown"),
-            Some(name) => OsString::from(name)
-        };
         let os = OS::get();
-        let extension = file_path.extension().map(|ext| ext.to_os_string());
-        let metadata = fs::metadata(file_path)?;
+        let name = match file_path.file_stem() {
+            None => {
+                log_warn!("File name is unknown");
+                uuid::Uuid::new_v4().to_string()
+            },
+            Some(name) => {
+                name.to_os_string().into_string().unwrap_or_else(|name| {
+                    log_warn!("Unable to properly convert file name to local os");
+                    name.to_string_lossy().to_string()
+                })
+            }
+        };
+        let extension = file_path.extension().map(|ext| {
+            ext.to_os_string().into_string().unwrap_or_else(|ext| {
+                log_warn!("Unable to properly convert file extension to local os");
+                ext.to_string_lossy().to_string()
+            })
+        });
+        let metadata = fs::metadata(file_path).map_err(|err| {
+            log_warn!("Unable to get metadata of file: {}", err);
+        });
+        let create_time = match &metadata {
+            Ok(data) => data.created().ok(),
+            Err(_) => None,
+        };
+        let modify_time = match &metadata {
+            Ok(data) => data.modified().ok(),
+            Err(_) => None,
+        };
+        let access_time = match &metadata {
+            Ok(data) => data.accessed().ok(),
+            Err(_) => None,
+        };
         
         Ok(BoxfileHeader {
             magic: header_info::MAGIC,
@@ -269,9 +301,9 @@ impl BoxfileHeader {
             name: EncryptedField::Plaintext(name),
             source_os: EncryptedField::Plaintext(os),
             extension: extension.into(),
-            create_time: metadata.created().ok().into(),
-            modify_time: metadata.modified().ok().into(),
-            access_time: metadata.accessed().ok().into(),
+            create_time: create_time.into(),
+            modify_time: modify_time.into(),
+            access_time: access_time.into(),
             padding_len,
             nonce
         })
@@ -377,5 +409,11 @@ impl<T> From<Option<T>> for EncryptedField<T> {
             Some(v) => EncryptedField::Plaintext(v),
             None => EncryptedField::Empty,
         }
+    }
+}
+
+impl<T> Default for EncryptedField<T> {
+    fn default() -> Self {
+        EncryptedField::Empty
     }
 }

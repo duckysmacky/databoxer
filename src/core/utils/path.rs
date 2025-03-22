@@ -1,6 +1,6 @@
 //! Contains functions for path manipulation
 
-use std::{ffi::OsString, fs};
+use std::fs;
 use std::path::{Path, PathBuf};
 use crate::core::encryption::boxfile;
 use crate::core::error::IOErrorKind;
@@ -21,7 +21,13 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
         } else if path.is_file() {
             file_paths.push(path);
         } else if !path.exists() {
-            let target_name = path.file_stem().unwrap().to_os_string();
+            let target_name = match path.file_stem() {
+                Some(name) => name.to_string_lossy().to_string(),
+                None => {
+                    log_error!("Unable to find \"{}\"", path.display());
+                    continue;
+                }
+            };
 
             match search_for_original(path.parent().unwrap(), target_name) {
                 Ok(box_path) => file_paths.push(box_path),
@@ -50,7 +56,7 @@ fn read_dir(dir_path: &Path, file_paths: &mut Vec<PathBuf>, recursive: bool) -> 
 }
 
 /// Searches `.box` files within a directory for one which matches its original name with provided
-fn search_for_original(dir_path: &Path, target_name: OsString) -> Result<PathBuf> {
+fn search_for_original(dir_path: &Path, target_name: String) -> Result<PathBuf> {
     for entry in fs::read_dir(dir_path)? {
         let path = entry?.path();
 
