@@ -1,4 +1,4 @@
-//! Logging macros for CLI mode
+//! Contains logic and types for CLI-specific logging
 
 use std::fmt;
 use std::sync::{Arc, Mutex};
@@ -10,12 +10,16 @@ lazy_static! {
     pub static ref LOGGER: Arc<Mutex<Logger>> = Arc::new(Mutex::new(Logger::new()));
 }
 
+/// Enum representing modes which Logger can use
 enum LoggerMode {
     QUIET,
     NORMAL,
     VERBOSE,
 }
 
+/// Logger is responsible for the CLI logging, having three main modes: quiet, normal and verbose, 
+/// each displaying different levels of information: none, only needed and everything respectively.
+/// Also has a debug side-mode which outputs debug information 
 pub struct Logger {
     debug: bool,
     mode: LoggerMode
@@ -29,11 +33,12 @@ impl Logger {
         }
     }
 
+    /// Uses the log type and own set mode to determine whether the message should be logged and
+    /// outputs it to the `stdout` or `stderr` respectively
     pub fn log(&self, log_type: LogType, message: fmt::Arguments<'_>) {
-        if log_type == LogType::DEBUG {
-            if !self.debug {
-                return;
-            }
+        use LogType::*;
+        
+        if self.debug && log_type == DEBUG {
             println!("[{}] {}", log_type.icon(), message);
             return;
         }
@@ -43,23 +48,24 @@ impl Logger {
                 return;
             },
             LoggerMode::NORMAL => {
-                if log_type == LogType::ERROR || log_type == LogType::WARN {
-                    eprintln!("[{}] {}", log_type.icon(), message);
-                } else if log_type == LogType::SUCCESS || log_type == LogType::STATUS {
-                    println!("[{}] {}", log_type.icon(), message);
+                match log_type {
+                    ERROR | WARN => eprintln!("[{}] {}", log_type.icon(), message),
+                    SUCCESS | STATUS => println!("[{}] {}", log_type.icon(), message),
+                    _ => return
                 }
             },
             LoggerMode::VERBOSE => {
-                if log_type == LogType::ERROR || log_type == LogType::WARN {
-                    eprintln!("[{}] {}", log_type.icon(), message);
-                } else {
-                    println!("[{}] {}", log_type.icon(), message);
+                match log_type {
+                    ERROR | WARN => eprintln!("[{}] {}", log_type.icon(), message),
+                    _ => println!("[{}] {}", log_type.icon(), message)
                 }
             },
         }
     }
 }
 
+/// Initiates and configures logger to be of one the modes based on the command arguments to be
+/// later used for CLI logging
 pub fn configure_logger(args: &ArgMatches) {
     let mut logger = LOGGER.lock().unwrap();
     logger.debug = args.get_flag("DEBUG");
