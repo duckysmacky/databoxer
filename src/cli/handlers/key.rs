@@ -19,7 +19,7 @@ pub fn handle_key_new(args: &ArgMatches) {
 pub fn handle_key_get(args: &ArgMatches) {
     let mut options = options::KeyGetOptions::default();
     options.password = args.get_one::<String>("PASSWORD");
-    options.as_byte_array = args.get_flag("BYTE-FORMAT");
+    options.as_byte_array = args.get_flag("AS_BYTE_ARRAY");
     
     match crate::get_key(options) {
         Ok(key) => {
