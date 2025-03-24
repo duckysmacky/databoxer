@@ -62,6 +62,25 @@ impl Logger {
             },
         }
     }
+    
+    /// Outputs plain data to the `stdout` based on the logger type. If set to quite mode, will
+    /// output a clean, decoration-free string, else will format it. `true` or `false` should be
+    /// provided as the first argument to imply that the data provided should be outputted as a
+    /// list or not
+    pub fn output(&self, list: bool, data: fmt::Arguments<'_>) {
+        match self.mode {
+            LoggerMode::QUIET => {
+                println!("{}", data);
+            },
+            _ => {
+                if list {
+                    println!(" - {}", data);
+                } else {
+                    println!("\t{}", data);
+                }
+            }
+        }
+    }
 }
 
 /// Initiates and configures logger to be of one the modes based on the command arguments to be
@@ -76,6 +95,27 @@ pub fn configure_logger(args: &ArgMatches) {
             LoggerMode::VERBOSE
         } else {
             LoggerMode::NORMAL
+        }
+    };
+}
+
+/// Macro used for better data output. Acts like a wrapper above print! in order to produce a
+/// more suitable output based on the logger mode (cleaner and simpler output when in quiet mode).
+/// Add the `list` keyword to suggest that the data provided should be outputted as a list
+#[macro_export]
+macro_rules! output {
+    (list $($args:tt)*) => {
+        {
+            use crate::cli::logger::LOGGER;
+            let logger = LOGGER.lock().unwrap();
+            logger.output(true, format_args!($($args)*));
+        }
+    };
+    ($($args:tt)*) => {
+        {
+            use crate::cli::logger::LOGGER;
+            let logger = LOGGER.lock().unwrap();
+            logger.output(false, format_args!($($args)*));
         }
     };
 }

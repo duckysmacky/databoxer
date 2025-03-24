@@ -1,7 +1,7 @@
 //! Contains handlers for the profile subcommand
 
 use clap::ArgMatches;
-use crate::{exits_on, log_error, log_success, log_warn, options};
+use crate::{exits_on, log_error, log_success, log_warn, options, output};
 
 pub fn handle_profile_create(args: &ArgMatches) {
     let name = args.get_one::<String>("NAME").expect("Profile name is required");
@@ -50,7 +50,10 @@ pub fn handle_profile_set(args: &ArgMatches) {
 
 pub fn handle_profile_get(_args: &ArgMatches) {
     match crate::get_profile() {
-        Ok(name) => log_success!("Currently selected profile: {}", name),
+        Ok(name) => {
+            log_success!("Currently selected profile:");
+            output!("{}", name);
+        },
         Err(err) => {
             log_error!("Unable to get currently selected profile");
             exits_on!(err; all);
@@ -71,10 +74,15 @@ pub fn handle_profile_list(_args: &ArgMatches) {
         log_warn!("No profiles found");
         log_warn!("New profile can be created with \"databoxer profile new\"");
     } else {
-        if count > 1 {log_success!("There are {} profiles found:", count);}
-        else {log_success!("There is {} profile found:", count);}
+        if count > 1 {
+            log_success!("There are {} profiles found:", count);
+        }
+        else {
+            log_success!("There is {} profile found:", count);
+        }
+        
         for name in profiles {
-            println!("\t- {}", name)
+            output!(list "{}", name);
         }
     }
 }

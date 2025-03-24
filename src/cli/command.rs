@@ -21,7 +21,7 @@ pub fn get_command() -> Command {
         .arg(Arg::new("QUIET")
             .short('q')
             .long("quiet")
-            .help("Do not print any log messages")
+            .help("Do not print any log messages. Suggested to be toggled on for output piping")
             .action(ArgAction::SetTrue)
             .conflicts_with("VERBOSE")
         )
