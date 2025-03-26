@@ -6,6 +6,7 @@ pub enum LogType {
     WARN,
     ERROR,
     DEBUG,
+    INPUT,
 }
 
 impl LogType {
@@ -16,7 +17,8 @@ impl LogType {
             LogType::SUCCESS => "+",
             LogType::WARN => "!",
             LogType::ERROR => "-",
-            LogType::DEBUG => "d"
+            LogType::DEBUG => "d",
+            LogType::INPUT => "?",
         }
     }
 }
