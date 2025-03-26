@@ -46,27 +46,37 @@ pub fn encrypt(
     let key = keys::get_key(&password)?;
     boxfile.encrypt_data(&key)?;
 
-    let mut output_path = match output_paths {
+    let output_path = match output_paths {
         Some(ref mut paths) => {
-            if let Some(mut path) = paths.pop_front() {
-                log!(DEBUG, "Writing to custom output path: {:?}", path);
-
-                if path.file_name() == None {
-                    path.set_file_name(uuid::Uuid::new_v4().to_string());
+            if let Some(mut output) = paths.pop_front() {
+                log!(DEBUG, "Writing to custom output path: {:?}", output);
+                
+                if let Some(file_name) = output.file_name() {
+                    output.set_file_name(file_name.to_string_lossy().to_string());
+                } else if output.is_file() {
+                    output.set_file_name(uuid::Uuid::new_v4().to_string());
                 }
-                path
+                
+                output
             } else {
-                input_path.to_path_buf()
+                let mut output = input_path.to_path_buf();
+                if !keep_original_name {
+                    output.set_file_name(uuid::Uuid::new_v4().to_string());
+                }
+                output.set_extension("box");
+                output
             }
         },
-        None => input_path.to_path_buf()
+        None => {
+            let mut output = input_path.to_path_buf();
+            if !keep_original_name {
+                output.set_file_name(uuid::Uuid::new_v4().to_string());
+            }
+            output.set_extension("box");
+            output
+        }
     };
-    
-    if !keep_original_name {
-        output_path.set_file_name(uuid::Uuid::new_v4().to_string());
-    }
 
-    output_path.set_extension("box");
     boxfile.save_to(&output_path)?;
     fs::remove_file(&input_path)?;
 
@@ -101,41 +111,56 @@ pub fn decrypt(
 
     let output_path = match output_paths {
         Some(ref mut paths) => {
-            if let Some(mut path) = paths.pop_front() {
-                log!(DEBUG, "Writing to custom output path: {:?}", path);
-
-                if path.file_name() == None {
+            if let Some(mut output) = paths.pop_front() {
+                log!(DEBUG, "Writing to custom output path: {:?}", output);
+                
+                if let Some(file_name) = output.file_name() {
+                    output.set_file_name(file_name.to_string_lossy().to_string());
+                } else if output.is_file() {
                     if let Some(name) = original_name {
-                        path.set_file_name(name);
+                        output.set_file_name(name);
                     }
                     if let Some(extension) = original_extension {
-                        path.set_extension(extension);
-                    }
-                } else if path.extension() == None {
-                    if let Some(extension) = original_extension {
-                        path.set_extension(extension);
+                        output.set_extension(extension);
                     }
                 }
-                path
+
+                output
             } else {
                 let mut path = input_path.to_path_buf();
+                
                 if let Some(name) = original_name {
                     path.set_file_name(name);
+                } else {
+                    log!(WARN, "Original file name is unknown");
+                    path.set_file_name(uuid::Uuid::new_v4().to_string());
                 }
+                
                 if let Some(extension) = original_extension {
                     path.set_extension(extension);
+                } else {
+                    log!(WARN, "Original file extension is unknown or missing");
                 }
+                
                 path
             }
         },
         None => {
             let mut path = input_path.to_path_buf();
+            
             if let Some(name) = original_name {
                 path.set_file_name(name);
+            } else {
+                log!(WARN, "Original file name is unknown");
+                path.set_file_name(uuid::Uuid::new_v4().to_string());
             }
+            
             if let Some(extension) = original_extension {
                 path.set_extension(extension);
+            } else {
+                log!(WARN, "Original file extension is unknown or missing");
             }
+            
             path
         }
     };

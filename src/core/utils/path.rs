@@ -60,7 +60,10 @@ fn search_for_original(dir_path: &Path, target_name: String) -> Result<PathBuf> 
     for entry in fs::read_dir(dir_path)? {
         let path = entry?.path();
 
-        if !path.is_file() || path.extension().unwrap() != "box" { continue; }
+        if !path.is_file() || path.extension().is_none() { continue; }
+        if let Some(ext) = path.extension() {
+            if ext != "box" { continue; }
+        } 
 
         let boxfile = boxfile::Boxfile::parse(&path)?;
         let (original_name, _) = boxfile.file_info();

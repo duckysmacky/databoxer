@@ -274,18 +274,12 @@ impl BoxfileHeader {
         encrypt_original_data: bool
     ) -> Result<Self> {
         let os = OS::get();
-        let name = match file_path.file_stem() {
-            None => {
-                log!(WARN, "File name is unknown");
-                uuid::Uuid::new_v4().to_string()
-            },
-            Some(name) => {
-                name.to_os_string().into_string().unwrap_or_else(|name| {
-                    log!(WARN, "Unable to properly convert file name to local os");
-                    name.to_string_lossy().to_string()
-                })
-            }
-        };
+        let name = file_path.file_stem().map(|name| {
+            name.to_os_string().into_string().unwrap_or_else(|name| {
+                log!(WARN, "Unable to properly convert file name to local os");
+                name.to_string_lossy().to_string()
+            })
+        });
         let extension = file_path.extension().map(|ext| {
             ext.to_os_string().into_string().unwrap_or_else(|ext| {
                 log!(WARN, "Unable to properly convert file extension to local os");
@@ -312,7 +306,7 @@ impl BoxfileHeader {
             magic: header_info::MAGIC,
             version: header_info::CURRENT_VERSION,
             encrypt_original_data,
-            name: EncryptedField::Plaintext(name),
+            name: name.into(),
             source_os: EncryptedField::Plaintext(os),
             extension: extension.into(),
             create_time: create_time.into(),
