@@ -172,31 +172,49 @@ fn test_key_generation() {
 }
 
 #[test]
-fn test_key_setting() {
+fn test_key_set() {
     setup();
 
     let test_dir = Path::new(common::TEST_DIR);
     let test_file = test_dir.join("text.txt");
     
-    // Generate a random 64-byte HEX string
+    // Generate a random 64-byte HEX string (a new key)
     const CHARSET: &[u8] = b"0123456789ABCDEF";
     let mut rng = rand::rng();
-    let valid_key = iter::repeat_with(|| CHARSET[rng.random_range(0..16)] as char)
+    let key = iter::repeat_with(|| CHARSET[rng.random_range(0..16)] as char)
         .take(64)
         .collect::<String>();
-    let invalid_key = "KY&*";
 
-    let output = databoxer_cmd!(p "key set"; &valid_key);
+    let output = databoxer_cmd!(p "key set"; &key);
     assert!(output.status.success(), "Key set failed");
-
-    let output = databoxer_cmd!(p "key set"; invalid_key);
-    assert!(!output.status.success(), "Invalid key was accepted");
 
     let output = databoxer_cmd!(p "box"; &test_file);
     assert!(output.status.success(), "Encryption failed with set key");
 
     let output = databoxer_cmd!(p "unbox"; &test_file);
     assert!(output.status.success(), "Decryption failed with set key");
+
+    cleanup();
+}
+
+#[test]
+fn test_invalid_key_set() {
+    setup();
+
+    let invalid_key = "KY&*";
+
+    let output = databoxer_cmd!(p "key set"; invalid_key);
+    assert!(!output.status.success(), "Invalid key was accepted");
+
+    cleanup();
+}
+
+#[test]
+fn test_key_get() {
+    setup();
+
+    let output = databoxer_cmd!(p "key get");
+    assert!(output.status.success(), "Failed to get key");
 
     cleanup();
 }
