@@ -2,13 +2,13 @@
 
 use crate::core::{data, prompt};
 use crate::core::data::profile::Profile;
-use crate::{log_info, new_err};
+use crate::{log, new_err};
 
 pub fn create(
     profile_name: &str,
     password: &Option<&String>
 ) -> crate::Result<()> {
-    log_info!("Creating a new profile with name \"{}\"", profile_name);
+    log!(INFO, "Creating a new profile with name \"{}\"", profile_name);
     
     let mut profiles = data::get_profiles()?;
     let password = match password {
@@ -24,7 +24,7 @@ pub fn delete(
     profile_name: &str,
     password: &Option<&String>
 ) -> crate::Result<()> {
-    log_info!("Deleting profile \"{}\"", profile_name);
+    log!(INFO, "Deleting profile \"{}\"", profile_name);
     
     let mut profiles = data::get_profiles()?;
     let password = match password {
@@ -40,7 +40,7 @@ pub fn select(
     profile_name: &str,
     password: &Option<&String>
 ) -> crate::Result<()> {
-    log_info!("Switching profile to \"{}\"", profile_name);
+    log!(INFO, "Switching profile to \"{}\"", profile_name);
     let mut profiles = data::get_profiles()?;
 
     if let Ok(profile) = profiles.get_current_profile() {
@@ -58,7 +58,7 @@ pub fn select(
 }
 
 pub fn get_current() -> crate::Result<String> {
-    log_info!("Getting current profile");
+    log!(INFO, "Getting current profile");
     
     let mut profiles = data::get_profiles()?;
     let profile = profiles.get_current_profile()?;
@@ -67,7 +67,7 @@ pub fn get_current() -> crate::Result<String> {
 }
 
 pub fn get_all() -> crate::Result<Vec<String>> {
-    log_info!("Listing all available profiles");
+    log!(INFO, "Listing all available profiles");
 
     let profiles = data::get_profiles()?;
     let profile_list = profiles.get_profiles().into_iter()

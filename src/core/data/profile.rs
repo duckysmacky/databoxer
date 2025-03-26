@@ -14,7 +14,7 @@
 use super::auth;
 use super::io::{read_file, write_file};
 use crate::core::encryption::cipher;
-use crate::{log_debug, log_info, new_err, Key, Nonce, Result};
+use crate::{log, new_err, Key, Nonce, Result};
 use serde::{Deserialize, Serialize};
 use std::io::{self};
 use std::path::PathBuf;
@@ -37,7 +37,7 @@ impl DataboxerProfiles {
     /// Imports self from the stored "profiles.json" file in the program's data directory. In case
     /// of the file missing, generates a new object with default empty values
     pub fn import(data_directory: PathBuf) -> Result<Self> {
-        log_debug!("Importing Databoxer profiles");
+        log!(DEBUG, "Importing Databoxer profiles");
         let profiles_file = data_directory.join(PROFILES_FILE_NAME);
 
         let profiles = match read_file(&profiles_file) {
@@ -48,7 +48,7 @@ impl DataboxerProfiles {
             },
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
-                    log_info!("\"profiles.json\" file doesn't exist. Generating new profiles data");
+                    log!(INFO, "\"profiles.json\" file doesn't exist. Generating new profiles data");
                     Self::new(profiles_file)
                 } else {
                     return Err(err.into());
@@ -72,7 +72,7 @@ impl DataboxerProfiles {
 
     /// Returns currently selected profile data
     pub fn get_current_profile(&mut self) -> Result<&mut Profile> {
-        log_debug!("Getting current profile");
+        log!(DEBUG, "Getting current profile");
         let current_profile = self.current_profile.clone();
 
         let profile = match current_profile {
@@ -87,27 +87,27 @@ impl DataboxerProfiles {
     
     /// Returns a list of currently available profiles
     pub fn get_profiles(&self) -> &Vec<Profile> {
-        log_debug!("Getting all available profiles");
+        log!(DEBUG, "Getting all available profiles");
         &self.profiles
     }
 
     /// Sets the current profile to profile which name was supplied. Returns an error if given
     /// profile doesn't exist
     pub fn set_current(&mut self, password: &str, profile_name: &str) -> Result<()> {
-        log_debug!("Setting current profile to \"{}\"", profile_name);
+        log!(DEBUG, "Setting current profile to \"{}\"", profile_name);
 
         let profile = self.find_profile(profile_name)?;
         profile.verify_password(password)?;
         self.current_profile = Some(profile_name.to_string());
         self.save()?;
 
-        log_debug!("Set current profile to \"{}\"", profile_name);
+        log!(DEBUG, "Set current profile to \"{}\"", profile_name);
         Ok(())
     }
 
     /// Deletes a profile with provided name
     pub fn delete_profile(&mut self, profile_password: &str, profile_name: &str) -> Result<()> {
-        log_debug!("Trying to delete a profile with name \"{}\"", profile_name);
+        log!(DEBUG, "Trying to delete a profile with name \"{}\"", profile_name);
 
         for (i, profile) in self.profiles.iter().enumerate() {
             if profile.name == profile_name {
@@ -121,7 +121,7 @@ impl DataboxerProfiles {
                     }
                 };
                 self.save()?;
-                log_debug!("Deleted profile \"{}\"", profile_name);
+                log!(DEBUG, "Deleted profile \"{}\"", profile_name);
                 return Ok(())
             }
         }
@@ -133,7 +133,7 @@ impl DataboxerProfiles {
     /// if it doesn't already exist
     #[allow(dead_code)]
     pub fn save_profile(&mut self, profile: Profile) -> Result<()> {
-        log_debug!("Saving profile: {:?}", &profile);
+        log!(DEBUG, "Saving profile: {:?}", &profile);
 
         let profile_name = profile.name.clone();
 
@@ -161,7 +161,7 @@ impl DataboxerProfiles {
     /// Adds a new profile to the profiles file. Errors if the profile already exists, as this
     /// functions only accepts new profiles
     pub fn new_profile(&mut self, profile: Profile) -> Result<()> {
-        log_debug!("Adding a new profile: {:?}", &profile);
+        log!(DEBUG, "Adding a new profile: {:?}", &profile);
 
         let profile_name = profile.name.clone();
         if self.find_profile(&profile_name).is_ok() {
@@ -175,7 +175,7 @@ impl DataboxerProfiles {
 
     /// Returns profile for profile which name was supplied
     pub fn find_profile(&mut self, profile_name: &str) -> Result<&mut Profile> {
-        log_debug!("Searching for profile with name \"{}\"", profile_name);
+        log!(DEBUG, "Searching for profile with name \"{}\"", profile_name);
 
         for profile in &mut self.profiles {
             if profile.name == profile_name {
@@ -188,7 +188,7 @@ impl DataboxerProfiles {
 
     /// Writes to the profile data file. Overwrites old data
     pub fn save(&self) -> Result<()> {
-        log_debug!("Saving profiles data to \"profiles.json\"");
+        log!(DEBUG, "Saving profiles data to \"profiles.json\"");
         let json_data = serde_json::to_string_pretty(&self)?;
 
         write_file(&self.file_path, &json_data, true)?;

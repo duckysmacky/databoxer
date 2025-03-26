@@ -5,7 +5,7 @@ use clap::ArgMatches;
 use std::path::PathBuf;
 use std::ffi::OsStr;
 use crate::core::utils::path;
-use crate::{exits_on, log_error, log_info, log_success, options};
+use crate::{exits_on, log, options};
 
 pub fn handle_box(args: &ArgMatches) -> (u32, u32) {
     let mut total_files: u32 = 0;
@@ -40,11 +40,11 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32) {
             false => path.file_name().unwrap_or(OsStr::new("<unknown file name>")).to_os_string()
         };
 
-        log_info!("Encrypting {:?}", file_name);
+        log!(INFO, "Encrypting {:?}", file_name);
         match crate::encrypt(path.as_path(), &mut options) {
-            Ok(_) => log_success!("Successfully encrypted {:?}", file_name),
+            Ok(_) => log!(SUCCESS, "Successfully encrypted {:?}", file_name),
             Err(err) => {
-                log_error!("Unable to encrypt \"{}\"", file_name.to_string_lossy());
+                log!(ERROR, "Unable to encrypt \"{}\"", file_name.to_string_lossy());
                 exits_on!(err; IOError false; InvalidInput false);
                 error_files += 1;
             }
@@ -84,11 +84,11 @@ pub fn handle_unbox(args: &ArgMatches) -> (u32, u32) {
             false => path.file_name().unwrap_or(OsStr::new("<unknown file name>")).to_os_string()
         };
 
-        log_info!("Decrypting {:?}", file_name);
+        log!(INFO, "Decrypting {:?}", file_name);
         match crate::decrypt(path.as_path(), &mut options) {
-            Ok(_) => log_success!("Successfully decrypted {:?}", path.file_name().unwrap().to_os_string()),
+            Ok(_) => log!(SUCCESS, "Successfully decrypted {:?}", path.file_name().unwrap().to_os_string()),
             Err(err) => {
-                log_error!("Unable to decrypt \"{}\"", file_name.to_string_lossy());
+                log!(ERROR, "Unable to decrypt \"{}\"", file_name.to_string_lossy());
                 exits_on!(err; IOError false; InvalidInput false);
                 error_files += 1;
             }
@@ -115,13 +115,13 @@ pub fn handle_information(args: &ArgMatches) {
     let file_info = crate::information(&file_path, options);
     match file_info {
         Ok(info_lines) => {
-            log_success!("Displaying information about \"{}\":", file_path.display());
+            log!(SUCCESS, "Displaying information about \"{}\":", file_path.display());
             for line in info_lines {
                 println!(" - {}", line);
             }
         }
         Err(err) => {
-            log_error!("Unable to get information about \"{}\"", file_path.display());
+            log!(ERROR, "Unable to get information about \"{}\"", file_path.display());
             exits_on!(err; all);
         }
     }

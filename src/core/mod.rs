@@ -8,7 +8,7 @@ use chrono::{DateTime, Local};
 use encryption::boxfile::EncryptedField;
 use crate::core::data::{io, keys};
 use crate::core::encryption::boxfile;
-use crate::{log_debug, log_info, log_warn, new_err, Result};
+use crate::{log, new_err, Result};
 pub mod utils;
 pub mod error;
 pub mod data;
@@ -31,7 +31,7 @@ pub fn encrypt(
         encrypt_original_data: bool,
         output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> Result<()> {
-    log_info!("Starting encryption...");
+    log!(INFO, "Starting encryption...");
     if let Some(extension) = input_path.extension() {
         if extension == "box" {
             return Err(new_err!(InvalidInput: InvalidFile, "Already encrypted"))
@@ -49,7 +49,7 @@ pub fn encrypt(
     let mut output_path = match output_paths {
         Some(ref mut paths) => {
             if let Some(mut path) = paths.pop_front() {
-                log_debug!("Writing to custom output path: {:?}", path);
+                log!(DEBUG, "Writing to custom output path: {:?}", path);
 
                 if path.file_name() == None {
                     path.set_file_name(uuid::Uuid::new_v4().to_string());
@@ -81,7 +81,7 @@ pub fn decrypt(
     password: &Option<&String>,
     output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> Result<()> {
-    log_info!("Starting decryption...");
+    log!(INFO, "Starting decryption...");
     let mut boxfile = boxfile::Boxfile::parse(&input_path)?;
     let password = match password {
         None => prompt::prompt_password()?,
@@ -92,17 +92,17 @@ pub fn decrypt(
     let (original_name, original_extension) = boxfile.file_info();
     let file_data = boxfile.file_data()?;
 
-    log_info!("Validating checksum...");
+    log!(INFO, "Validating checksum...");
     if boxfile.verify_checksum()? {
-        log_info!("Checksum verification successful");
+        log!(INFO, "Checksum verification successful");
     } else {
-        log_warn!("Checksum verification failed. Data seems to be tampered with");
+        log!(WARN, "Checksum verification failed. Data seems to be tampered with");
     }
 
     let output_path = match output_paths {
         Some(ref mut paths) => {
             if let Some(mut path) = paths.pop_front() {
-                log_debug!("Writing to custom output path: {:?}", path);
+                log!(DEBUG, "Writing to custom output path: {:?}", path);
 
                 if path.file_name() == None {
                     if let Some(name) = original_name {
@@ -158,14 +158,14 @@ pub fn get_information(
         format!("{}", time.format("%d.%m.%Y %T"))
     }
 
-    log_info!("Getting file information...");
+    log!(INFO, "Getting file information...");
     let boxfile = boxfile::Boxfile::parse(&input_path)?;
     let header = boxfile.header;
 
     let mut file_information = Vec::new();
 
     if header.encrypt_original_data {
-        file_information.push("Original file data seems to be encrypted. Unavaliable to retrieve file information!".to_string());   
+        file_information.push("Original file data seems to be encrypted. Unavailable to retrieve file information!".to_string());   
     }
 
     if let EncryptedField::Plaintext(name) = header.name {

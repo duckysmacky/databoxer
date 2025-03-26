@@ -4,7 +4,7 @@ use chacha20poly1305::{
     aead::{OsRng, Aead, KeyInit},
     AeadCore, ChaCha20Poly1305
 };
-use crate::{new_err, Result};
+use crate::{log, new_err, Result};
 
 /// Type representing a basic 32-byte encryption key
 pub type Key = [u8; 32];
@@ -26,6 +26,7 @@ pub fn generate_nonce() -> Nonce {
 /// Encrypts and returns encrypted bytes with ChaCha20Ply1305 algorithm using provided `Key` and
 /// `Nonce`
 pub fn encrypt(key: &Key, nonce: &Nonce, data: &[u8]) -> Result<Vec<u8>> {
+    log!(DEBUG, "Encrypting bytes");
     let cipher = ChaCha20Poly1305::new(key.into());
 
     let ciphertext = cipher.encrypt(nonce.into(), data)
@@ -37,6 +38,7 @@ pub fn encrypt(key: &Key, nonce: &Nonce, data: &[u8]) -> Result<Vec<u8>> {
 /// `Nonce`. Provided `Key` and `Nonce` should match the ones which were used to encrypt file for
 /// successful decryption
 pub fn decrypt(key: &Key, nonce: &Nonce, data: &[u8]) -> Result<Vec<u8>> {
+    log!(DEBUG, "Decrypting bytes");
     let cipher = ChaCha20Poly1305::new(key.into());
 
     let plaintext = cipher.decrypt(nonce.into(), data)

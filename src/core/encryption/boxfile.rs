@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 use std::path::Path;
 use std::{fs, iter};
 use std::time::SystemTime;
-use crate::{log_debug, log_warn, new_err, Checksum, Key, Nonce, Result};
+use crate::{log, new_err, Checksum, Key, Nonce, Result};
 use crate::core::data::io;
 use crate::core::os::OS;
 use crate::core::utils;
@@ -63,7 +63,7 @@ impl Boxfile {
     /// step and added at the end of the original file's data as a part of the body.
     /// Checksum is generated at the very end from the header and body content.
     pub fn new(file_path: &Path, generate_padding: bool, encrypt_header_data: bool) -> Result<Self> {
-        log_debug!("Initializing boxfile from {:?}", file_path);
+        log!(DEBUG, "Initializing boxfile from {:?}", file_path);
         let file_data = io::read_bytes(&file_path)?;
         let mut padding_len = 0;
         let body: Box<[u8]> = match generate_padding {
@@ -74,7 +74,7 @@ impl Boxfile {
             },
             false => file_data.into()
         };
-        log_debug!("Boxfile body generated");
+        log!(DEBUG, "Boxfile body generated");
 
         let header = BoxfileHeader::new(
             file_path,
@@ -82,7 +82,7 @@ impl Boxfile {
             cipher::generate_nonce(),
             encrypt_header_data,
         )?;
-        log_debug!("Boxfile header generated: {:?}", &header);
+        log!(DEBUG, "Boxfile header generated: {:?}", &header);
 
         let mut hasher = Sha256::new();
         hasher.update(&header.as_bytes()?);
@@ -90,7 +90,7 @@ impl Boxfile {
         let result = hasher.finalize();
         let mut checksum = [0u8; 32];
         checksum.copy_from_slice(&result);
-        log_debug!("Checksum generated: {:?}", utils::hex::bytes_to_string(&checksum));
+        log!(DEBUG, "Checksum generated: {:?}", utils::hex::bytes_to_string(&checksum));
 
         Ok(Self {
             header,
@@ -101,11 +101,11 @@ impl Boxfile {
 
     /// Parses the provided file, tries to deserialize it and returns a parsed `boxfile`.
     pub fn parse(file_path: &Path) -> Result<Self> {
-        log_debug!("Parsing boxfile from {:?}", file_path);
+        log!(DEBUG, "Parsing boxfile from {:?}", file_path);
 
         if let Some(extension) = file_path.extension() {
             if extension != "box" {
-                log_warn!("Target file extension is not \".box\"");
+                log!(WARN, "Target file extension is not \".box\"");
             }
         }
 
@@ -121,7 +121,7 @@ impl Boxfile {
         
         let version = &bytes[3];
         if version != &header_info::CURRENT_VERSION {
-            log_warn!("Target file uses a different boxfile version");
+            log!(WARN, "Target file uses a different boxfile version");
         }
 
         // TODO: add custom configuration options
@@ -129,7 +129,7 @@ impl Boxfile {
         let (boxfile, _bytes): (Boxfile, usize) = bincode::serde::decode_from_slice(&bytes, config)
             .map_err(|err| new_err!(SerializeError: BoxfileParseError, err))?;
 
-        log_debug!("Boxfile deserialized");
+        log!(DEBUG, "Boxfile deserialized");
         Ok(boxfile)
     }
 
@@ -158,14 +158,14 @@ impl Boxfile {
         let mut checksum = [0u8; 32];
 
         checksum.copy_from_slice(&result);
-        log_debug!("Boxfile checksum: {:?}", utils::hex::bytes_to_string(&self.checksum));
-        log_debug!("Updated checksum: {:?}", utils::hex::bytes_to_string(&checksum));
+        log!(DEBUG, "Boxfile checksum: {:?}", utils::hex::bytes_to_string(&self.checksum));
+        log!(DEBUG, "Updated checksum: {:?}", utils::hex::bytes_to_string(&checksum));
         Ok(checksum == self.checksum)
     }
 
     /// Serializes self and writes to specified file
     pub fn save_to(&self, path: &Path) -> Result<()> {
-        log_debug!("Serializing and saving boxfile to {:?}", path);
+        log!(DEBUG, "Serializing and saving boxfile to {:?}", path);
 
         let config = bincode::config::standard();
         let bytes = bincode::serde::encode_to_vec(&self, config)
@@ -178,7 +178,7 @@ impl Boxfile {
     /// Encrypts the body of the `boxfile` together with randomly generated padding 
     /// using the provided encryption key
     pub fn encrypt_data(&mut self, key: &Key) -> Result<()> {
-        log_debug!("Encrypting boxfile");
+        log!(DEBUG, "Encrypting boxfile");
 
         let encrypted_body = cipher::encrypt(key, &self.header.nonce, &self.body)?;
         self.body = encrypted_body.into();
@@ -192,7 +192,7 @@ impl Boxfile {
     
     /// Decrypts the body of the `boxfile` (data + padding) using the provided encryption key
     pub fn decrypt_data(&mut self, key: &Key) -> Result<()> {
-        log_debug!("Decrypting boxfile");
+        log!(DEBUG, "Decrypting boxfile");
 
         let decrypted_body = cipher::decrypt(key, &self.header.nonce, &self.body)?;
         self.body = decrypted_body.into();
@@ -206,7 +206,7 @@ impl Boxfile {
 
     /// Removes the generated padding, returning only the actual data content of the original file
     pub fn file_data(&self) -> Result<Box<[u8]>> {
-        log_debug!("Retrieving file data from boxfile");
+        log!(DEBUG, "Retrieving file data from boxfile");
         let padding_len = self.header.padding_len;
         let data_len = self.body.len() as i32 - padding_len as i32;
         if data_len < 0 {
@@ -276,24 +276,24 @@ impl BoxfileHeader {
         let os = OS::get();
         let name = match file_path.file_stem() {
             None => {
-                log_warn!("File name is unknown");
+                log!(WARN, "File name is unknown");
                 uuid::Uuid::new_v4().to_string()
             },
             Some(name) => {
                 name.to_os_string().into_string().unwrap_or_else(|name| {
-                    log_warn!("Unable to properly convert file name to local os");
+                    log!(WARN, "Unable to properly convert file name to local os");
                     name.to_string_lossy().to_string()
                 })
             }
         };
         let extension = file_path.extension().map(|ext| {
             ext.to_os_string().into_string().unwrap_or_else(|ext| {
-                log_warn!("Unable to properly convert file extension to local os");
+                log!(WARN, "Unable to properly convert file extension to local os");
                 ext.to_string_lossy().to_string()
             })
         });
         let metadata = fs::metadata(file_path).map_err(|err| {
-            log_warn!("Unable to get metadata of file: {}", err);
+            log!(WARN, "Unable to get metadata of file: {}", err);
         });
         let create_time = match &metadata {
             Ok(data) => data.created().ok(),
@@ -325,19 +325,19 @@ impl BoxfileHeader {
 
     /// Returns the header serialized as plain bytes
     pub fn as_bytes(&self) -> Result<Vec<u8>> {
-        log_debug!("Serializing Boxfile header");
+        log!(DEBUG, "Serializing Boxfile header");
 
         let config = bincode::config::standard();
         let bytes = bincode::serde::encode_to_vec(&self, config)?;
 
-        log_debug!("Boxfile header successfully serialized");
+        log!(DEBUG, "Boxfile header successfully serialized");
         Ok(bytes)
     }
 
     /// Encrypts the file's original data within the header (file name, extension, etc.)
     /// using the provided encryption key
     pub fn encrypt_data(&mut self, key: &Key) -> Result<()> {
-        log_debug!("Encrypting header data");
+        log!(DEBUG, "Encrypting header data");
         
         // this function is used for encryption within the inner wrapper to avoid boilerplate. same
         // with decryption
@@ -356,7 +356,7 @@ impl BoxfileHeader {
     
     /// Decrypts the file's original data using the provided encryption key
     pub fn decrypt_data(&mut self, key: &Key) -> Result<()> {
-        log_debug!("Decrypting header data");
+        log!(DEBUG, "Decrypting header data");
         
         let func = |data: &[u8]| cipher::decrypt(key, &self.nonce, data);
 

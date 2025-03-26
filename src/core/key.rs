@@ -1,13 +1,13 @@
 //! Contains core logic for key manipulation subcommands
 
-use crate::{log_info, new_err, Key};
+use crate::{log, new_err, Key};
 use crate::core::{prompt, utils};
 use crate::core::data::keys;
 use crate::core::encryption::cipher;
 pub fn new(
     password: &Option<&String>
 ) -> crate::Result<()> {
-    log_info!("Generating a new encryption key for current profile");
+    log!(INFO, "Generating a new encryption key for current profile");
     
     let key = cipher::generate_key();
     let password = match password {
@@ -23,7 +23,7 @@ pub fn get(
     password: &Option<&String>, 
     as_byte_array: bool
 ) -> crate::Result<String> {
-    log_info!("Retrieving the encryption key from the current profile");
+    log!(INFO, "Retrieving the encryption key from the current profile");
 
     let password = match password {
         None => prompt::prompt_password()?,
@@ -41,7 +41,7 @@ pub fn set(
     new_key: &str, 
     password: &Option<&String>
 ) -> crate::Result<()> {
-    log_info!("Setting the encryption key from the current profile");
+    log!(INFO, "Setting the encryption key from the current profile");
     
     let new_key = utils::hex::string_to_bytes(new_key)?;
     if new_key.len() != 32 {

@@ -4,7 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use crate::core::encryption::boxfile;
 use crate::core::error::IOErrorKind;
-use crate::{log_error, log_info, log_warn, Error, Result};
+use crate::{log, Error, Result};
 
 /// Opens and parses provided path, returning a flattened list of all found paths. Verifies if the
 /// given paths exists. In case of a directory being provided returns all paths inside of it. Can
@@ -15,7 +15,7 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
     for path in input_paths {
         if path.is_dir() {
             if let Err(err) = read_dir(&path, &mut file_paths, recursive) {
-                log_warn!("Unable to read directory \"{}\": {}", path.display(), err);
+                log!(WARN, "Unable to read directory \"{}\": {}", path.display(), err);
                 continue;
             }
         } else if path.is_file() {
@@ -24,7 +24,7 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
             let target_name = match path.file_stem() {
                 Some(name) => name.to_string_lossy().to_string(),
                 None => {
-                    log_error!("Unable to find \"{}\"", path.display());
+                    log!(ERROR, "Unable to find \"{}\"", path.display());
                     continue;
                 }
             };
@@ -32,7 +32,7 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
             match search_for_original(path.parent().unwrap(), target_name) {
                 Ok(box_path) => file_paths.push(box_path),
                 Err(err) => {
-                    log_error!("Unable to find \"{}\" ({})", path.display(), err);
+                    log!(ERROR, "Unable to find \"{}\" ({})", path.display(), err);
                     continue;
                 }
             }
@@ -67,7 +67,7 @@ fn search_for_original(dir_path: &Path, target_name: String) -> Result<PathBuf> 
 
         if let Some(name) = original_name {
             if target_name.eq(name) {
-                log_info!("Found an encrypted (.box) file with the same original name: {}", path.display());
+                log!(INFO, "Found an encrypted (.box) file with the same original name: {}", path.display());
                 return Ok(path)
             }
         }

@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use std::{fmt, io};
 use std::fmt::{Display, Formatter};
 use std::io::ErrorKind;
-use crate::{log_error, log_warn};
+use crate::log;
 
 /// Custom result type which should be used throughout the codebase for consistency and better
 /// error handling
@@ -181,7 +181,7 @@ pub enum InvalidDataKind {
     InvalidHex(String),
     /// The length of *x* type is invalid
     InvalidLength(String),
-    /// Crucial data is missing, meaning the proccess cannot continue
+    /// Crucial data is missing, meaning the process cannot continue
     MissingData(String),
 }
 
@@ -281,21 +281,21 @@ impl Display for ConfigErrorKind {
 
 /// General error printer which outputs the error itself and detailed information if needed
 pub fn print_error(err: &Error) {
-    log_error!("{}", err);
+    log!(ERROR, "{}", err);
     match &err {
         Error::ProfileError(kind) => {
             if let ProfileErrorKind::AuthenticationFailed = kind {
-                log_warn!("Try again or use a different profile")
+                log!(WARN, "Try again or use a different profile")
             } else {
-                log_warn!("New profile can be created with \"databoxer profile new\"");
+                log!(WARN, "New profile can be created with \"databoxer profile new\"");
             }
         },
         Error::ConfigError(_) => {
-            log_warn!("Please check the config file for any mistakes and try again");
+            log!(WARN, "Please check the config file for any mistakes and try again");
         }
         Error::EncryptionError(kind) => {
             if let EncryptionErrorKind::CipherError(_) = kind {
-                log_warn!("Please check if the correct profile is used");
+                log!(WARN, "Please check if the correct profile is used");
             }
         }
         _ => {}
