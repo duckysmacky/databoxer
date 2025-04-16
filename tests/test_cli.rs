@@ -1,5 +1,7 @@
 //! Tests to test how the CLI client performs with different flags and inputs
 
+use std::fs::File;
+use std::io::Write;
 use std::iter;
 use std::path::Path;
 use rand::Rng;
@@ -15,6 +17,15 @@ fn setup() {
 /// Local test environment cleanup
 fn cleanup() {
     common::cleanup();
+}
+
+/// Generate a random 64-byte HEX string (a new key)
+fn generate_key() -> String {
+    const CHARSET: &[u8] = b"0123456789ABCDEF";
+    let mut rng = rand::rng();
+    iter::repeat_with(|| CHARSET[rng.random_range(0..16)] as char)
+        .take(64)
+        .collect::<String>()
 }
 
 /// Macro for fast Databoxer executable command generation and execution. Will initiate a new command
@@ -177,13 +188,8 @@ fn test_key_set() {
 
     let test_dir = Path::new(common::TEST_DIR);
     let test_file = test_dir.join("text.txt");
-    
-    // Generate a random 64-byte HEX string (a new key)
-    const CHARSET: &[u8] = b"0123456789ABCDEF";
-    let mut rng = rand::rng();
-    let key = iter::repeat_with(|| CHARSET[rng.random_range(0..16)] as char)
-        .take(64)
-        .collect::<String>();
+ 
+    let key = generate_key();
 
     let output = databoxer_cmd!(p "key set"; &key);
     assert!(output.status.success(), "Key set failed");
@@ -193,6 +199,32 @@ fn test_key_set() {
 
     let output = databoxer_cmd!(p "unbox"; &test_file);
     assert!(output.status.success(), "Decryption failed with set key");
+
+    cleanup();
+}
+
+#[test]
+fn test_key_set_from_file() {
+    setup();
+
+    let test_dir = Path::new(common::TEST_DIR);
+    let key_file_path = test_dir.join("key.txt");
+ 
+    let key = generate_key();
+
+    let mut key_file = File::create(&key_file_path).expect("Unable to create key file");
+    key_file.write_all(&key.as_bytes()).expect("Unable to write key data into file");
+
+    let output = databoxer_cmd!(p "key set"; "--file", &key_file_path.to_str().unwrap());
+    assert!(output.status.success(), "Key set failed");
+
+    // TODO: create a macro for this type of things
+    let mut options = databoxer::options::KeyGetOptions::default();
+    let password = common::PASSWORD.to_string();
+    options.password = Some(&password);
+    let output_key = databoxer::get_key(options).expect("Unable to get current key");
+    
+    assert_eq!(key, output_key);
 
     cleanup();
 }
