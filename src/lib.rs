@@ -45,8 +45,8 @@ pub fn decrypt(file_path: &std::path::Path, options: &mut options::DecryptionOpt
 /// Returns a vector which contains strings with retrieved information about original file name,
 /// extension, create, modify and access time. Will skip the unknown metadata unless optionally 
 /// specified not to
-pub fn information(file_path: &std::path::Path, options: options::InformationOptions) -> Result<Vec<String>> {
-    core::get_information(file_path, options.show_unknown)
+pub fn get_info(file_path: &std::path::Path, options: options::InformationOptions) -> Result<Vec<String>> {
+    core::get_info(file_path, options.show_unknown)
 }
 
 /// Creates a new profile with the provided password and profile name. Will **not** automatically

@@ -41,8 +41,8 @@ pub fn run() {
     }
 
     /* INFORMATION */
-    if let Some(args) = global_args.subcommand_matches("information") {
-        handlers::handle_information(args);
+    if let Some(args) = global_args.subcommand_matches("info") {
+        handlers::handle_info(args);
     }
 
     /* PROFILE */

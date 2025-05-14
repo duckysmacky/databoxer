@@ -174,7 +174,7 @@ pub fn decrypt(
 /// Parses the provided boxfile and retrieves original metadata from the header. Returns a vector
 /// containing string with retrieved information, skipping the unknown metadata unless specified
 /// not to
-pub fn get_information(
+pub fn get_info(
     input_path: &Path,
     show_unknown: bool
 ) -> Result<Vec<String>> {
@@ -187,47 +187,47 @@ pub fn get_information(
     let boxfile = boxfile::Boxfile::parse(&input_path)?;
     let header = boxfile.header;
 
-    let mut file_information = Vec::new();
+    let mut file_info = Vec::new();
 
     if header.encrypt_original_data {
-        file_information.push("Original file data seems to be encrypted. Unavailable to retrieve file information!".to_string());   
+        file_info.push("Original file data seems to be encrypted. Unavailable to retrieve file information!".to_string());   
     }
 
     if let EncryptedField::Plaintext(name) = header.name {
-        file_information.push(format!("Name: {:?}", name));
+        file_info.push(format!("Name: {:?}", name));
     } else {
-        file_information.push("Name: Unknown".to_string());
+        file_info.push("Name: Unknown".to_string());
     }
 
     if let EncryptedField::Plaintext(extension) = header.extension {
-        file_information.push(format!("Extension: {:?}", extension));
+        file_info.push(format!("Extension: {:?}", extension));
     } else {
-        file_information.push("Extension: None".to_string());
+        file_info.push("Extension: None".to_string());
     }
 
     if let EncryptedField::Plaintext(source_os) = header.source_os {
-        file_information.push(format!("OS: {:?}", source_os));
+        file_info.push(format!("OS: {:?}", source_os));
     } else {
-        file_information.push("OS: Unknown".to_string());
+        file_info.push("OS: Unknown".to_string());
     }
 
     if let EncryptedField::Plaintext(system_time) = header.create_time {
-        file_information.push(format!("Create time: {}", format_time(system_time)));
+        file_info.push(format!("Create time: {}", format_time(system_time)));
     } else if show_unknown {
-        file_information.push("Create time: Unknown".to_string());
+        file_info.push("Create time: Unknown".to_string());
     }
 
     if let EncryptedField::Plaintext(system_time) = header.modify_time {
-        file_information.push(format!("Modify time: {}", format_time(system_time)));
+        file_info.push(format!("Modify time: {}", format_time(system_time)));
     } else if show_unknown {
-        file_information.push("Modify time: Unknown".to_string());
+        file_info.push("Modify time: Unknown".to_string());
     }
 
     if let EncryptedField::Plaintext(system_time) = header.access_time {
-        file_information.push(format!("Access time: {}", format_time(system_time)));
+        file_info.push(format!("Access time: {}", format_time(system_time)));
     } else if show_unknown {
-        file_information.push("Access time: Unknown".to_string());
+        file_info.push("Access time: Unknown".to_string());
     }
 
-    Ok(file_information)
+    Ok(file_info)
 }

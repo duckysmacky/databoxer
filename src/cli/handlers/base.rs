@@ -98,10 +98,11 @@ pub fn handle_unbox(args: &ArgMatches) -> (u32, u32) {
     (total_files, error_files)
 }
 
-pub fn handle_information(args: &ArgMatches) {
+pub fn handle_info(args: &ArgMatches) {
     let file_path = {
         let path = args.get_one::<String>("PATH").expect("File path is required");
         let paths = path::parse_paths(vec![PathBuf::from(path)], false);
+        
         if paths.is_empty() {
             std::process::exit(1);
         } else {
@@ -112,7 +113,7 @@ pub fn handle_information(args: &ArgMatches) {
     let mut options = options::InformationOptions::default();
     options.show_unknown = args.get_flag("SHOW_UNKNOWN");
 
-    let file_info = crate::information(&file_path, options);
+    let file_info = crate::get_info(&file_path, options);
     match file_info {
         Ok(info_lines) => {
             log!(SUCCESS, "Displaying information about \"{}\":", file_path.display());
