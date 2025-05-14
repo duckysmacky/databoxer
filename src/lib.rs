@@ -22,9 +22,9 @@ pub fn encrypt(file_path: &std::path::Path, options: &mut options::EncryptionOpt
     core::encrypt(
         file_path,
         &options.password,
-        options.keep_original_name, 
+        options.keep_original_name,
         options.generate_padding,
-        options.encrypt_original_data,
+        options.encrypt_metadata,
         &mut options.output_paths
     )
 }

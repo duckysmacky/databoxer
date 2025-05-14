@@ -70,10 +70,10 @@ pub fn get_command() -> Command {
                 .help("Disable random padding generation for the .box file")
                 .action(ArgAction::SetTrue)
             )
-            .arg(Arg::new("ENCRYPT_ORIGINAL_DATA")
+            .arg(Arg::new("ENCRYPT_METADATA")
                 .short('e')
-                .long("encrypt-original-data")
-                .help("Encrypt original file data (name, extension, OS, modify time, etc.)")
+                .long("metadata")
+                .help("Encrypt original file metadata (name, extension, OS, modify time, etc.)")
                 .action(ArgAction::SetTrue)
             )
             // .arg(Arg::new("overwrite") // TODO

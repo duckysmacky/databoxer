@@ -24,12 +24,12 @@ mod os;
 /// and get access to current profile. Additional options can be supplied to change the encryption
 /// process
 pub fn encrypt(
-        input_path: &Path,
-        password: &Option<&String>,
-        keep_original_name: bool,
-        generate_padding: bool,
-        encrypt_original_data: bool,
-        output_paths: &mut Option<VecDeque<PathBuf>>,
+    input_path: &Path,
+    password: &Option<&String>,
+    keep_original_name: bool,
+    generate_padding: bool,
+    encrypt_metadata: bool,
+    output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> Result<()> {
     log!(INFO, "Starting encryption...");
     if let Some(extension) = input_path.extension() {
@@ -38,7 +38,7 @@ pub fn encrypt(
         }
     }
 
-    let mut boxfile = boxfile::Boxfile::new(input_path, generate_padding, encrypt_original_data)?;
+    let mut boxfile = boxfile::Boxfile::new(input_path, generate_padding, encrypt_metadata)?;
     let password = match password {
         None => prompt::prompt_password()?,
         Some(p) => p.to_string()

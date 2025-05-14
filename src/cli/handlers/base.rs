@@ -22,7 +22,7 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32) {
     options.password = args.get_one::<String>("PASSWORD");
     options.keep_original_name = args.get_flag("KEEP_NAME");
     options.generate_padding = !args.get_flag("NO_PADDING");
-    options.encrypt_original_data = args.get_flag("ENCRYPT_ORIGINAL_DATA");
+    options.encrypt_metadata = args.get_flag("ENCRYPT_METADATA");
 
     if let Some(output_paths) = args.get_many::<String>("OUTPUT") {
         let mut deque = VecDeque::new();

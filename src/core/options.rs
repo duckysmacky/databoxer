@@ -10,11 +10,11 @@ pub struct EncryptionOptions<'a> {
     /// Generate random padding bytes and append them to the file. If set
     /// to false, can save some disk space for the file
     pub generate_padding: bool,
-    /// Whether to encrypt original file data like file name, extension, modify time, etc. Enabling
-    /// this feature provides better data protection, but the file will be unable to parse from the
-    /// outside without properly decrypting (e.g. encrypted file search by its original name will
-    /// be unavaliable)
-    pub encrypt_original_data: bool,
+    /// Whether to encrypt original file metadata like file name, extension, modify time, etc. 
+    /// Enabling this feature provides better data protection, but the file will be unable to parse
+    /// from the outside without properly decrypting (e.g. encrypted file search by its original
+    /// name will be unavailable)
+    pub encrypt_metadata: bool,
     /// Contains an output path for each file
     pub output_paths: Option<VecDeque<PathBuf>>
 }
@@ -25,7 +25,7 @@ impl Default for EncryptionOptions<'_> {
             password: None,
             keep_original_name: false,
             generate_padding: true,
-            encrypt_original_data: false,
+            encrypt_metadata: false,
             output_paths: None,
         }
     }
