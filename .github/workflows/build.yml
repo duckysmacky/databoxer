@@ -36,8 +36,8 @@ jobs:
         with:
           name: databoxer-${{ runner.os }}
           path: |
-            lockbox-${{ runner.os }}
-            lockbox-${{ runner.os }}.exe
+            databoxer-${{ runner.os }}
+            databoxer-${{ runner.os }}.exe
 
   release:
     name: Create Release
