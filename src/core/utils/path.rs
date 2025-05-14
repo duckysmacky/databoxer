@@ -15,7 +15,7 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
     for path in input_paths {
         if path.is_dir() {
             if let Err(err) = read_dir(&path, &mut file_paths, recursive) {
-                log!(WARN, "Unable to read directory \"{}\": {}", path.display(), err);
+                log!(WARN, "Unable to read directory '{}': {}", path.display(), err);
                 continue;
             }
         } else if path.is_file() {
@@ -24,7 +24,7 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
             let target_name = match path.file_stem() {
                 Some(name) => name.to_string_lossy().to_string(),
                 None => {
-                    log!(ERROR, "Unable to find \"{}\"", path.display());
+                    log!(ERROR, "Unable to find '{}'", path.display());
                     continue;
                 }
             };
@@ -32,7 +32,7 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
             match search_for_original(path.parent().unwrap(), target_name) {
                 Ok(box_path) => file_paths.push(box_path),
                 Err(err) => {
-                    log!(ERROR, "Unable to find \"{}\" ({})", path.display(), err);
+                    log!(ERROR, "Unable to find '{}' ({})", path.display(), err);
                     continue;
                 }
             }

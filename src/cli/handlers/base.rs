@@ -44,7 +44,7 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32) {
         match crate::encrypt(path.as_path(), &mut options) {
             Ok(_) => log!(SUCCESS, "Successfully encrypted {:?}", file_name),
             Err(err) => {
-                log!(ERROR, "Unable to encrypt \"{}\"", file_name.to_string_lossy());
+                log!(ERROR, "Unable to encrypt '{}'", file_name.to_string_lossy());
                 exits_on!(err; IOError false; InvalidInput false);
                 error_files += 1;
             }
@@ -88,7 +88,7 @@ pub fn handle_unbox(args: &ArgMatches) -> (u32, u32) {
         match crate::decrypt(path.as_path(), &mut options) {
             Ok(_) => log!(SUCCESS, "Successfully decrypted {:?}", path.file_name().unwrap().to_os_string()),
             Err(err) => {
-                log!(ERROR, "Unable to decrypt \"{}\"", file_name.to_string_lossy());
+                log!(ERROR, "Unable to decrypt '{}'", file_name.to_string_lossy());
                 exits_on!(err; IOError false; InvalidInput false);
                 error_files += 1;
             }
@@ -102,7 +102,7 @@ pub fn handle_info(args: &ArgMatches) {
     let file_path = {
         let path = args.get_one::<String>("PATH").expect("File path is required");
         let paths = path::parse_paths(vec![PathBuf::from(path)], false);
-        
+
         if paths.is_empty() {
             std::process::exit(1);
         } else {
@@ -116,13 +116,13 @@ pub fn handle_info(args: &ArgMatches) {
     let file_info = crate::get_info(&file_path, options);
     match file_info {
         Ok(info_lines) => {
-            log!(SUCCESS, "Displaying information about \"{}\":", file_path.display());
+            log!(SUCCESS, "Displaying information about '{}':", file_path.display());
             for line in info_lines {
                 println!(" - {}", line);
             }
         }
         Err(err) => {
-            log!(ERROR, "Unable to get information about \"{}\"", file_path.display());
+            log!(ERROR, "Unable to get information about '{}'", file_path.display());
             exits_on!(err; all);
         }
     }

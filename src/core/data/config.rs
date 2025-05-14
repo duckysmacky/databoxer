@@ -54,7 +54,7 @@ impl DataboxerConfig {
             },
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
-                    log!(INFO, "\"config.toml\" file doesn't exist. Generating new default config");
+                    log!(INFO, "'config.toml' file doesn't exist. Generating new default config");
                     Self::new(config_file)
                 } else {
                     return Err(err.into());
@@ -80,7 +80,7 @@ impl DataboxerConfig {
     /// Saves the configuration to the config file
     #[allow(dead_code)]
     pub fn save(&self) -> Result<()> {
-        log!(DEBUG, "Saving configuration data to \"config.toml\"");
+        log!(DEBUG, "Saving configuration data to 'config.toml'");
         let toml_data = toml::to_string(&self)?;
 
         write_file(&self.file_path, &toml_data, true)?;

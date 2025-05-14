@@ -148,8 +148,8 @@ impl Display for IOErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             IOErrorKind::StdError(e) => write!(f, "{} - {}", e.kind, e.message),
-            IOErrorKind::NotFound(p) => write!(f, "File \"{}\" not found", p.display()),
-            IOErrorKind::NotSupported(p) => write!(f, "File \"{}\" is not supported", p.display()),
+            IOErrorKind::NotFound(p) => write!(f, "File '{}' not found", p.display()),
+            IOErrorKind::NotSupported(p) => write!(f, "File '{}' is not supported", p.display()),
         }
     }
 }
@@ -169,7 +169,7 @@ pub enum OSErrorKind {
 impl Display for OSErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            OSErrorKind::EnvVariableUnavailable(s) => write!(f, "Unable to get the \"{}\" environment variable", s),
+            OSErrorKind::EnvVariableUnavailable(s) => write!(f, "Unable to get the '{}' environment variable", s),
         }
     }
 }
@@ -260,10 +260,10 @@ pub enum ProfileErrorKind {
 impl Display for ProfileErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            ProfileErrorKind::NotFound(s) => write!(f, "Profile \"{}\" not found", s),
+            ProfileErrorKind::NotFound(s) => write!(f, "Profile '{}' not found", s),
             ProfileErrorKind::NotSelected => write!(f, "No profile is currently selected"),
-            ProfileErrorKind::AlreadySelected(s) => write!(f, "Profile \"{}\" is already selected", s),
-            ProfileErrorKind::AlreadyExists(s) => write!(f, "Profile \"{}\" already exists", s),
+            ProfileErrorKind::AlreadySelected(s) => write!(f, "Profile '{}' is already selected", s),
+            ProfileErrorKind::AlreadyExists(s) => write!(f, "Profile '{}' already exists", s),
             ProfileErrorKind::AuthenticationFailed => write!(f, "Authentication failed. Invalid profile password provided"),
             ProfileErrorKind::MismatchedProfile => write!(f, "Mismatched profile. File seems to be encrypted with a different one."),
         }
@@ -287,7 +287,7 @@ pub fn print_error(err: &Error) {
             if let ProfileErrorKind::AuthenticationFailed = kind {
                 log!(WARN, "Try again or use a different profile")
             } else {
-                log!(WARN, "New profile can be created with \"databoxer profile new\"");
+                log!(WARN, "New profile can be created with 'databoxer profile new'");
             }
         },
         Error::ConfigError(_) => {

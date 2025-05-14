@@ -33,7 +33,7 @@ pub fn string_to_bytes(hex_string: &str) -> Result<Vec<u8>> {
         let c2: char = hex_string.chars().nth(i + 1).unwrap();
         
         if !HEX_CHARS.contains(c1) || !HEX_CHARS.contains(c2) {
-            return Err(new_err!(InvalidData: InvalidHex, format!("Invalid byte \"{}{}\"", c1, c2)))
+            return Err(new_err!(InvalidData: InvalidHex, format!("Invalid byte '{}{}'", c1, c2)))
         }
         
         // we can just unwrap this too since we sanity-checked the characmers beforehand

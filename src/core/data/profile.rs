@@ -48,7 +48,7 @@ impl DataboxerProfiles {
             },
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
-                    log!(INFO, "\"profiles.json\" file doesn't exist. Generating new profiles data");
+                    log!(INFO, "'profiles.json' file doesn't exist. Generating new profiles data");
                     Self::new(profiles_file)
                 } else {
                     return Err(err.into());
@@ -94,20 +94,20 @@ impl DataboxerProfiles {
     /// Sets the current profile to profile which name was supplied. Returns an error if given
     /// profile doesn't exist
     pub fn set_current(&mut self, password: &str, profile_name: &str) -> Result<()> {
-        log!(DEBUG, "Setting current profile to \"{}\"", profile_name);
+        log!(DEBUG, "Setting current profile to '{}'", profile_name);
 
         let profile = self.find_profile(profile_name)?;
         profile.verify_password(password)?;
         self.current_profile = Some(profile_name.to_string());
         self.save()?;
 
-        log!(DEBUG, "Set current profile to \"{}\"", profile_name);
+        log!(DEBUG, "Set current profile to '{}'", profile_name);
         Ok(())
     }
 
     /// Deletes a profile with provided name
     pub fn delete_profile(&mut self, profile_password: &str, profile_name: &str) -> Result<()> {
-        log!(DEBUG, "Trying to delete a profile with name \"{}\"", profile_name);
+        log!(DEBUG, "Trying to delete a profile with name '{}'", profile_name);
 
         for (i, profile) in self.profiles.iter().enumerate() {
             if profile.name == profile_name {
@@ -121,7 +121,7 @@ impl DataboxerProfiles {
                     }
                 };
                 self.save()?;
-                log!(DEBUG, "Deleted profile \"{}\"", profile_name);
+                log!(DEBUG, "Deleted profile '{}'", profile_name);
                 return Ok(())
             }
         }
@@ -175,7 +175,7 @@ impl DataboxerProfiles {
 
     /// Returns profile for profile which name was supplied
     pub fn find_profile(&mut self, profile_name: &str) -> Result<&mut Profile> {
-        log!(DEBUG, "Searching for profile with name \"{}\"", profile_name);
+        log!(DEBUG, "Searching for profile with name '{}'", profile_name);
 
         for profile in &mut self.profiles {
             if profile.name == profile_name {
@@ -188,7 +188,7 @@ impl DataboxerProfiles {
 
     /// Writes to the profile data file. Overwrites old data
     pub fn save(&self) -> Result<()> {
-        log!(DEBUG, "Saving profiles data to \"profiles.json\"");
+        log!(DEBUG, "Saving profiles data to 'profiles.json'");
         let json_data = serde_json::to_string_pretty(&self)?;
 
         write_file(&self.file_path, &json_data, true)?;

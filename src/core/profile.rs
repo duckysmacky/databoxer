@@ -8,7 +8,7 @@ pub fn create(
     profile_name: &str,
     password: &Option<&String>
 ) -> crate::Result<()> {
-    log!(INFO, "Creating a new profile with name \"{}\"", profile_name);
+    log!(INFO, "Creating a new profile with name '{}'", profile_name);
     
     let mut profiles = data::get_profiles()?;
     let password = match password {
@@ -24,7 +24,7 @@ pub fn delete(
     profile_name: &str,
     password: &Option<&String>
 ) -> crate::Result<()> {
-    log!(INFO, "Deleting profile \"{}\"", profile_name);
+    log!(INFO, "Deleting profile '{}'", profile_name);
     
     let mut profiles = data::get_profiles()?;
     let password = match password {
@@ -40,7 +40,7 @@ pub fn select(
     profile_name: &str,
     password: &Option<&String>
 ) -> crate::Result<()> {
-    log!(INFO, "Switching profile to \"{}\"", profile_name);
+    log!(INFO, "Switching profile to '{}'", profile_name);
     let mut profiles = data::get_profiles()?;
 
     if let Ok(profile) = profiles.get_current_profile() {

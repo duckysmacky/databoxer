@@ -10,9 +10,9 @@ pub fn handle_profile_create(args: &ArgMatches) {
     options.password = args.get_one::<String>("PASSWORD");
 
     match crate::create_profile(name, options) {
-        Ok(_) => log!(SUCCESS, "Successfully created new profile \"{}\"", name),
+        Ok(_) => log!(SUCCESS, "Successfully created new profile '{}'", name),
         Err(err) => {
-            log!(ERROR, "Unable to create a new profile named \"{}\"", name);
+            log!(ERROR, "Unable to create a new profile named '{}'", name);
             exits_on!(err; all);
         }
     }
@@ -25,9 +25,9 @@ pub fn handle_profile_delete(args: &ArgMatches) {
     options.password = args.get_one::<String>("PASSWORD");
 
     match crate::delete_profile(name, options) {
-        Ok(_) => log!(SUCCESS, "Successfully deleted profile \"{}\"", name),
+        Ok(_) => log!(SUCCESS, "Successfully deleted profile '{}'", name),
         Err(err) => {
-            log!(ERROR, "Unable to delete profile \"{}\"", name);
+            log!(ERROR, "Unable to delete profile '{}'", name);
             exits_on!(err; all);
         }
     }
@@ -40,9 +40,9 @@ pub fn handle_profile_set(args: &ArgMatches) {
     options.password = args.get_one::<String>("PASSWORD");
     
     match crate::select_profile(name, options) {
-        Ok(_) => log!(SUCCESS, "Successfully set current profile to \"{}\"", name),
+        Ok(_) => log!(SUCCESS, "Successfully set current profile to '{}'", name),
         Err(err) => {
-            log!(ERROR, "Unable to switch to profile \"{}\"", name);
+            log!(ERROR, "Unable to switch to profile '{}'", name);
             exits_on!(err; all);
         }
     }
@@ -72,7 +72,7 @@ pub fn handle_profile_list(_args: &ArgMatches) {
 
     if count == 0 {
         log!(WARN, "No profiles found");
-        log!(WARN, "New profile can be created with \"databoxer profile new\"");
+        log!(WARN, "New profile can be created with 'databoxer profile new'");
     } else {
         if count > 1 {
             log!(SUCCESS, "There are {} profiles found:", count);

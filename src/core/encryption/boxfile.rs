@@ -105,7 +105,7 @@ impl Boxfile {
 
         if let Some(extension) = file_path.extension() {
             if extension != "box" {
-                log!(WARN, "Target file extension is not \".box\"");
+                log!(WARN, "Target file extension is not '.box'");
             }
         }
 
