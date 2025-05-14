@@ -20,25 +20,25 @@ path = "src/main.rs"
 
 [dependencies]
 # cli
-clap = { version = "4.5.29", features = ["cargo"] }
+clap = { version = "4.5.38", features = ["cargo"] }
 
 # serialization
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.137"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 bincode = { version = "2.0.1", features = ["serde"] }
-toml = "0.8.20"
+toml = "0.8.22"
 
 # encryption
 chacha20poly1305 = "0.10.1"
-rand = "0.9.0"
+rand = "0.9.1"
 sha2 = "0.10.8"
 argon2 = "0.5.3"
 
 # utility
-uuid = { version = "1.13.1", features = ["v4", "fast-rng"] }
+uuid = { version = "1.16.0", features = ["v4", "fast-rng"] }
 lazy_static = "1.5.0"
 paste = "1.0.15"
-chrono = "0.4.39"
+chrono = "0.4.41"
 
 # unix
 [target.'cfg(unix)'.dependencies]
