@@ -30,7 +30,7 @@ pub fn encrypt(key: &Key, nonce: &Nonce, data: &[u8]) -> Result<Vec<u8>> {
     let cipher = ChaCha20Poly1305::new(key.into());
 
     let ciphertext = cipher.encrypt(nonce.into(), data)
-        .map_err(|err| new_err!(EncryptionError: CipherError, err))?;
+        .map_err(|_| new_err!(EncryptionError: CipherError, "Unable to decrypt data"))?;
     Ok(ciphertext)
 }
 
@@ -42,6 +42,6 @@ pub fn decrypt(key: &Key, nonce: &Nonce, data: &[u8]) -> Result<Vec<u8>> {
     let cipher = ChaCha20Poly1305::new(key.into());
 
     let plaintext = cipher.decrypt(nonce.into(), data)
-        .map_err(|err| new_err!(EncryptionError: CipherError, err))?;
+        .map_err(|_| new_err!(EncryptionError: CipherError, "Unable to decrypt data"))?;
     Ok(plaintext)
 }

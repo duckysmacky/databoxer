@@ -15,7 +15,7 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
     for path in input_paths {
         if path.is_dir() {
             if let Err(err) = read_dir(&path, &mut file_paths, recursive) {
-                log!(WARN, "Unable to read directory '{}': {}", path.display(), err);
+                log!(ERROR, "Unable to read directory '{}': {}", path.display(), err);
                 continue;
             }
         } else if path.is_file() {
