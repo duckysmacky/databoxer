@@ -54,6 +54,14 @@ cargo install databoxer
 2. Select the version you want to download
 3. Download the binary for your system
 
+### From source
+
+_From latest commit at branch `master`_
+
+```shell
+cargo install --git https://github.com/duckysmacky/copper.git
+```
+
 ## ⭐ Features
 
 ### 👤 Profile system
