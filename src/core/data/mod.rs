@@ -6,6 +6,7 @@ use profiles::DataboxerProfiles;
 use config::DataboxerConfig;
 use crate::core::os::data;
 
+pub mod boxfile;
 pub mod profiles;
 pub mod keys;
 pub mod config;

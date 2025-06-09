@@ -6,7 +6,7 @@
 
 pub use core::error::{Error, Result};
 pub use core::options;
-pub use core::encryption::{boxfile::Boxfile, cipher::{Checksum, Key, Nonce}};
+pub use core::encryption::cipher::{Checksum, Key, Nonce};
 
 pub mod app;
 pub mod cli;

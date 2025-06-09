@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::SystemTime;
 use chrono::{DateTime, Local};
-use crate::core::encryption::boxfile::EncryptedField;
+use crate::core::data::boxfile::{Boxfile, EncryptedField};
 use crate::log;
 
 /// Parses the provided boxfile and retrieves original metadata from the header. Returns a vector
@@ -17,13 +17,13 @@ pub fn get_info(
     }
 
     log!(INFO, "Getting file information...");
-    let boxfile = crate::Boxfile::parse(&input_path)?;
+    let boxfile = Boxfile::parse(&input_path)?;
     let header = boxfile.header;
 
     let mut file_info = Vec::new();
 
     if header.encrypt_original_data {
-        file_info.push("Original file data seems to be encrypted. Unavailable to retrieve file information!".to_string());   
+        file_info.push("Original file data seems to be encrypted. Unavailable to retrieve file information!".to_string());
     }
 
     if let EncryptedField::Plaintext(name) = header.name {

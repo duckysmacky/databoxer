@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::collections::VecDeque;
 use std::fs;
-use crate::core::data::keys;
+use crate::core::data::{keys, boxfile::Boxfile};
 use crate::core::prompt;
 use crate::log;
 use crate::utils::io;
@@ -15,7 +15,7 @@ pub fn decrypt(
     output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> crate::Result<()> {
     log!(INFO, "Starting decryption...");
-    let mut boxfile = crate::Boxfile::parse(&input_path)?;
+    let mut boxfile = Boxfile::parse(&input_path)?;
     let password = match password {
         None => prompt::prompt_password()?,
         Some(p) => p.to_string()

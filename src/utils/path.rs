@@ -2,7 +2,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::core::encryption::boxfile;
+use crate::core::data::boxfile;
 use crate::core::error::IOErrorKind;
 use crate::{log, Error, Result};
 

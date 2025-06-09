@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::collections::VecDeque;
 use std::fs;
-use crate::core::data::keys;
+use crate::core::data::{keys, boxfile::Boxfile};
 use crate::core::prompt;
 use crate::{log, new_err};
 
@@ -23,7 +23,7 @@ pub fn encrypt(
         }
     }
 
-    let mut boxfile = crate::Boxfile::new(input_path, generate_padding, encrypt_metadata)?;
+    let mut boxfile = Boxfile::new(input_path, generate_padding, encrypt_metadata)?;
     let password = match password {
         None => prompt::prompt_password()?,
         Some(p) => p.to_string()
