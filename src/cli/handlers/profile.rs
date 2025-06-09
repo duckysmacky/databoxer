@@ -1,8 +1,9 @@
-//! Contains handlers for the profile subcommand
+//! Handlers for the `databoxer profile` command and its subcommands
 
 use clap::ArgMatches;
 use crate::{exits_on, log, options, output};
 
+/// Handles the `databoxer profile create` subcommand
 pub fn handle_profile_create(args: &ArgMatches) {
     let name = args.get_one::<String>("NAME").expect("Profile name is required");
     
@@ -18,6 +19,7 @@ pub fn handle_profile_create(args: &ArgMatches) {
     }
 }
 
+/// Handles the `databoxer profile delete` subcommand
 pub fn handle_profile_delete(args: &ArgMatches) {
     let name = args.get_one::<String>("NAME").expect("Profile name is required");
 
@@ -33,6 +35,7 @@ pub fn handle_profile_delete(args: &ArgMatches) {
     }
 }
 
+/// Handles the `databoxer profile set` subcommand
 pub fn handle_profile_set(args: &ArgMatches) {
     let name = args.get_one::<String>("NAME").expect("Profile name is required");
 
@@ -48,6 +51,7 @@ pub fn handle_profile_set(args: &ArgMatches) {
     }
 }
 
+/// Handles the `databoxer profile get` subcommand
 pub fn handle_profile_get(_args: &ArgMatches) {
     match crate::get_profile() {
         Ok(name) => {
@@ -61,6 +65,7 @@ pub fn handle_profile_get(_args: &ArgMatches) {
     }
 }
 
+/// Handles the `databoxer profile list` subcommand
 pub fn handle_profile_list(_args: &ArgMatches) {
     let profiles = crate::get_profiles();
 

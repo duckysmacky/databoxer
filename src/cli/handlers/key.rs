@@ -1,10 +1,11 @@
-//! Contains handlers for the key subcommand
+//! Handlers for the `databoxer key` command and its subcommands
 
 use std::fs::File;
 use std::io::Read;
 use clap::ArgMatches;
 use crate::{exits_on, log, options, output};
 
+/// Handles the `databoxer key new` subcommand
 pub fn handle_key_new(args: &ArgMatches) {
     let mut options = options::KeyNewOptions::default();
     options.password = args.get_one::<String>("PASSWORD");
@@ -18,6 +19,7 @@ pub fn handle_key_new(args: &ArgMatches) {
     }
 }
 
+/// Handles the `databoxer key get` subcommand
 pub fn handle_key_get(args: &ArgMatches) {
     let mut options = options::KeyGetOptions::default();
     options.password = args.get_one::<String>("PASSWORD");
@@ -36,6 +38,7 @@ pub fn handle_key_get(args: &ArgMatches) {
     }
 }
 
+/// Handles the `databoxer key set` subcommand
 pub fn handle_key_set<'a>(args: &ArgMatches) {
     let new_key = {
         if let Some(key_path) = args.get_one::<String>("FILE") {
