@@ -1,7 +1,7 @@
 //! Contains core logic for profile manipulation subcommands
 
 use crate::core::{data, prompt};
-use crate::core::data::profile::Profile;
+use crate::core::data::profiles::Profile;
 use crate::{log, new_err};
 
 pub fn create(

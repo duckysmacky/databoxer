@@ -2,11 +2,11 @@
 //! interactions
 
 use crate::{log, Result};
-use profile::DataboxerProfiles;
+use profiles::DataboxerProfiles;
 use config::DataboxerConfig;
 use crate::core::os::data;
 
-pub mod profile;
+pub mod profiles;
 pub mod keys;
 pub mod config;
 mod auth;
