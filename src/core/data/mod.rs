@@ -9,7 +9,6 @@ use crate::core::os::data;
 pub mod profile;
 pub mod keys;
 pub mod config;
-pub mod io;
 mod auth;
 
 /// Fetches the Databoxer profiles by importing it from the file on the disk. Will return an error in

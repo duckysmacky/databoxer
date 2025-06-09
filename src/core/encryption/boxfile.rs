@@ -8,10 +8,8 @@ use std::path::Path;
 use std::{fs, iter};
 use std::time::SystemTime;
 use crate::{log, new_err, Checksum, Key, Nonce, Result};
-use crate::core::data::io;
-use crate::core::os::OS;
-use crate::core::utils;
-use super::cipher;
+use crate::utils::{io, hex};
+use crate::core::{encryption::cipher, os::OS};
 
 mod header_info {
     //! Constants for the header: current file format version and unique file
@@ -90,7 +88,7 @@ impl Boxfile {
         let result = hasher.finalize();
         let mut checksum = [0u8; 32];
         checksum.copy_from_slice(&result);
-        log!(DEBUG, "Checksum generated: {:?}", utils::hex::bytes_to_string(&checksum));
+        log!(DEBUG, "Checksum generated: {:?}", hex::bytes_to_string(&checksum));
 
         Ok(Self {
             header,
@@ -158,8 +156,8 @@ impl Boxfile {
         let mut checksum = [0u8; 32];
 
         checksum.copy_from_slice(&result);
-        log!(DEBUG, "Boxfile checksum: {:?}", utils::hex::bytes_to_string(&self.checksum));
-        log!(DEBUG, "Updated checksum: {:?}", utils::hex::bytes_to_string(&checksum));
+        log!(DEBUG, "Boxfile checksum: {:?}", hex::bytes_to_string(&self.checksum));
+        log!(DEBUG, "Updated checksum: {:?}", hex::bytes_to_string(&checksum));
         Ok(checksum == self.checksum)
     }
 

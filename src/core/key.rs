@@ -1,9 +1,9 @@
 //! Contains core logic for key manipulation subcommands
 
 use crate::{log, new_err, Key};
-use crate::core::{prompt, utils};
-use crate::core::data::keys;
-use crate::core::encryption::cipher;
+use crate::core::{prompt, data::keys, encryption::cipher};
+use crate::utils::hex;
+
 pub fn new(
     password: &Option<&String>
 ) -> crate::Result<()> {
@@ -34,7 +34,7 @@ pub fn get(
     if as_byte_array {
         return Ok(format!("{:?}", key))
     }
-    Ok(utils::hex::bytes_to_string(&key))
+    Ok(hex::bytes_to_string(&key))
 }
 
 pub fn set(
@@ -43,7 +43,7 @@ pub fn set(
 ) -> crate::Result<()> {
     log!(INFO, "Setting the encryption key from the current profile");
     
-    let new_key = utils::hex::string_to_bytes(new_key)?;
+    let new_key = hex::string_to_bytes(new_key)?;
     if new_key.len() != 32 {
         return Err(new_err!(InvalidData: InvalidHex, "Provided hex is not a 32-byte key"))
     }

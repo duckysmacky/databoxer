@@ -1,4 +1,4 @@
-//! Contains HEX manipulation functions for parsing custom types
+//! Contains hex helper functions
 
 use crate::{Result, new_err};
 

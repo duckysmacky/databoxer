@@ -11,6 +11,7 @@ use core::{key, profile};
 
 pub mod app;
 pub mod cli;
+pub mod utils;
 mod core;
 
 /// Encrypts the file at the given path. Extra options can be provided to control the process.

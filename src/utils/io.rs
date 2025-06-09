@@ -1,4 +1,4 @@
-//! Contains functions for basic IO operation on files
+//! Contains helper functions for basic IO operation on files
 
 use std::path::Path;
 use std::fs::{self, File};

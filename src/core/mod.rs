@@ -6,10 +6,10 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use chrono::{DateTime, Local};
 use encryption::boxfile::EncryptedField;
-use crate::core::data::{io, keys};
-use crate::core::encryption::boxfile;
 use crate::{log, new_err, Result};
-pub mod utils;
+use crate::core::{data::keys, encryption::boxfile};
+use crate::utils::io;
+
 pub mod error;
 pub mod data;
 pub mod encryption;

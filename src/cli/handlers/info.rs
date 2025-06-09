@@ -2,7 +2,7 @@
 
 use clap::ArgMatches;
 use std::path::PathBuf;
-use crate::core::utils::path;
+use crate::utils::path;
 use crate::{exits_on, log, options};
 
 /// Handles the `databoxer info` subcommand

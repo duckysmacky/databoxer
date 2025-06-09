@@ -10,7 +10,7 @@
 use std::io;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use crate::core::data::io::{read_file, write_file};
+use crate::utils::io::{read_file, write_file};
 use crate::core::error::Result;
 use crate::log;
 

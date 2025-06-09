@@ -1,4 +1,4 @@
-//! Contains functions for path manipulation
+//! Contains helper functions for path manipulation
 
 use std::fs;
 use std::path::{Path, PathBuf};
