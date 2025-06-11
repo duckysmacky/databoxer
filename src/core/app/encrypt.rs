@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::collections::VecDeque;
 use std::fs;
-use crate::core::data::{keys, boxfile::Boxfile};
-use crate::core::prompt;
+use crate::core::data::boxfile::Boxfile;
+use crate::core::{data, prompt};
 use crate::{log, new_err};
 
 /// Encrypts the file at provided path using current profile's key. Password is required to verify
@@ -17,18 +17,23 @@ pub fn encrypt(
     output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> crate::Result<()> {
     log!(INFO, "Starting encryption...");
+
     if let Some(extension) = input_path.extension() {
         if extension == "box" {
             return Err(new_err!(InvalidInput: InvalidFile, "Already encrypted"))
         }
     }
 
+    let mut profile_data = data::get_profiles()?;
+    let profile = profile_data.get_current_profile()?;
+
     let mut boxfile = Boxfile::new(input_path, generate_padding, encrypt_metadata)?;
     let password = match password {
         None => prompt::prompt_password()?,
         Some(p) => p.to_string()
     };
-    let key = keys::get_key(&password)?;
+
+    let key = profile.get_key(&password)?;
     boxfile.encrypt_data(&key)?;
 
     let output_path = match output_paths {
@@ -64,6 +69,9 @@ pub fn encrypt(
 
     boxfile.save_to(&output_path)?;
     fs::remove_file(&input_path)?;
+
+    profile.add_associated_file(&output_path);
+    profile_data.save()?;
 
     Ok(())
 }

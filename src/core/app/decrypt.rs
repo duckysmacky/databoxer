@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::collections::VecDeque;
 use std::fs;
-use crate::core::data::{keys, boxfile::Boxfile};
-use crate::core::prompt;
+use crate::core::data::boxfile::Boxfile;
+use crate::core::{data, prompt};
 use crate::log;
 use crate::utils::io;
 
@@ -15,13 +15,20 @@ pub fn decrypt(
     output_paths: &mut Option<VecDeque<PathBuf>>,
 ) -> crate::Result<()> {
     log!(INFO, "Starting decryption...");
-    let mut boxfile = Boxfile::parse(&input_path)?;
+    
+    let mut profiles = data::get_profiles()?;
+    let profile = profiles.get_current_profile()?;
+    
     let password = match password {
         None => prompt::prompt_password()?,
         Some(p) => p.to_string()
     };
-    let key = keys::get_key(&password)?;
+
+    let key = profile.get_key(&password)?;
+
+    let mut boxfile = Boxfile::parse(&input_path)?;
     boxfile.decrypt_data(&key)?;
+    
     let (original_name, original_extension) = boxfile.file_info();
     let file_data = boxfile.file_data()?;
 
@@ -90,6 +97,9 @@ pub fn decrypt(
     
     io::write_bytes(&output_path, &file_data, true)?;
     fs::remove_file(&input_path)?;
+    
+    profile.remove_associated_file(&input_path);
+    profiles.save()?;
 
     Ok(())
 }
