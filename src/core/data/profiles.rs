@@ -17,7 +17,7 @@ use crate::core::encryption::cipher;
 use crate::{log, new_err, Key, Nonce, Result};
 use serde::{Deserialize, Serialize};
 use std::io::{self};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Name of the file which stores all the profile data
 const PROFILES_FILE_NAME: &str = "profiles.json";
@@ -207,6 +207,8 @@ pub struct Profile {
     nonce: Nonce,
     /// Profile's encryption key stored in an encrypted format
     key: Vec<u8>,
+    /// List of files associated with the profile
+    associated_files: Vec<PathBuf>,
 }
 
 impl Profile {
@@ -224,6 +226,7 @@ impl Profile {
             key: encrypted_key,
             nonce,
             password_hash,
+            associated_files: Vec::new(),
         })
     }
 
@@ -254,6 +257,21 @@ impl Profile {
             .map_err(|_| new_err!(InvalidData: InvalidLength, "encryption key"))?;
 
         Ok(key)
+    }
+    
+    /// Specify a file which is associated with the profile
+    pub fn add_associated_file(&mut self, file: &Path) {
+        self.associated_files.push(file.to_path_buf());
+    }
+
+    /// Remove a file from being associated with the profile
+    pub fn remove_associated_file(&mut self, file: &Path) {
+        self.associated_files.retain(|f| f != &file);
+    }
+    
+    /// Get a list of all files associated with the profile
+    pub fn get_associated_files(&self) -> &Vec<PathBuf> {
+        &self.associated_files
     }
 }
 
