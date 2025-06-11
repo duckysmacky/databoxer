@@ -208,6 +208,7 @@ pub struct Profile {
     /// Profile's encryption key stored in an encrypted format
     key: Vec<u8>,
     /// List of files associated with the profile
+    #[serde(default)]
     associated_files: Vec<PathBuf>,
 }
 
@@ -279,15 +280,40 @@ impl Profile {
 mod tests {
     use crate::core::os::data;
     use super::*;
-
-    #[test]
-    #[ignore]
+    
     /// Creates the `profiles.json` file in the program data directory and fills it with default
     /// information
+    #[test]
+    #[ignore]
     fn write_default_profiles() {
         let data_directory = data::get_data_dir().expect("Cannot get data directory");
         let config = ProfileData::import(data_directory);
 
         assert!(config.is_ok())
+    }
+    
+    /// Tests profile's password verification process
+    #[test]
+    fn test_password_verification() -> Result<()> {
+        const PASSWORD: &str = "test-password123";
+        
+        let profile = Profile::new("test", PASSWORD)?;
+        profile.verify_password(PASSWORD)
+    }
+    
+    /// Tests if the originally set key will be equal to the decrypted key
+    #[test]
+    fn test_profile_key_encryption() -> Result<()> {
+        const PASSWORD: &str = "test-password123";
+        
+        let mut profile = Profile::new("test", PASSWORD)?;
+        
+        let original_key = cipher::generate_key();
+        profile.set_key(PASSWORD, original_key)?;
+        
+        let decrypted_key = profile.get_key(PASSWORD)?;
+        assert_eq!(original_key, decrypted_key, "Original and decrypted keys are different");
+        
+        Ok(())
     }
 }
