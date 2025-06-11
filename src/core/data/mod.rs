@@ -2,7 +2,7 @@
 //! interactions
 
 use crate::{log, Result};
-use profiles::DataboxerProfiles;
+use profiles::ProfileData;
 use config::DataboxerConfig;
 use crate::core::os::data;
 
@@ -14,10 +14,10 @@ mod auth;
 
 /// Fetches the Databoxer profiles by importing it from the file on the disk. Will return an error in
 /// case of the operation failing
-pub fn get_profiles() -> Result<DataboxerProfiles> {
+pub fn get_profiles() -> Result<ProfileData> {
     log!(DEBUG, "Getting Databoxer profiles");
     let data_directory = data::get_data_dir()?;
-    DataboxerProfiles::import(data_directory)
+    ProfileData::import(data_directory)
 }
 
 /// Fetches the Databoxer config by importing it from the file on the disk. Will return an error in

@@ -25,7 +25,7 @@ const PROFILES_FILE_NAME: &str = "profiles.json";
 /// Struct holding all the needed profile information for the program. Saved on the disk as a JSON
 /// file
 #[derive(Serialize, Deserialize, Debug)]
-pub struct DataboxerProfiles {
+pub struct ProfileData {
     current_profile: Option<String>,
     profiles: Vec<Profile>,
     #[serde(skip)]
@@ -33,7 +33,7 @@ pub struct DataboxerProfiles {
 }
 
 /// Object-driven approach
-impl DataboxerProfiles {
+impl ProfileData {
     /// Imports self from the stored "profiles.json" file in the program's data directory. In case
     /// of the file missing, generates a new object with default empty values
     pub fn import(data_directory: PathBuf) -> Result<Self> {
@@ -42,7 +42,7 @@ impl DataboxerProfiles {
 
         let profiles = match read_file(&profiles_file) {
             Ok(file_data) => {
-                let mut profiles: DataboxerProfiles = serde_json::from_str(&file_data)?;
+                let mut profiles: ProfileData = serde_json::from_str(&file_data)?;
                 profiles.file_path = profiles_file;
                 profiles
             },
@@ -63,7 +63,7 @@ impl DataboxerProfiles {
     fn new(
         file_path: PathBuf
     ) -> Self {
-        DataboxerProfiles {
+        ProfileData {
             current_profile: None,
             profiles: vec![],
             file_path
@@ -268,7 +268,7 @@ mod tests {
     /// information
     fn write_default_profiles() {
         let data_directory = data::get_data_dir().expect("Cannot get data directory");
-        let config = DataboxerProfiles::import(data_directory);
+        let config = ProfileData::import(data_directory);
 
         assert!(config.is_ok())
     }
