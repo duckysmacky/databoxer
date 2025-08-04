@@ -36,9 +36,9 @@ key_ and per-file 12-byte _nonce_, which ensures ciphertext's uniqueness across 
 Databoxer is cross-platform and is supported on all major platforms (Windows, Linux and macOS)
 
 > [!NOTE]
-> The current version provides all the main features of the project fully implemented, but with time many of the will be
-> expanded upon and many new ones will be added. Since the project is still in development, many already existing features
-> might and will change. Consider all version under `1.0.0` to be prone to many interface, functionality and API changes.
+> The latest release of Databoxer has all the core features fully implemented, but it is still considered to be a 
+> **beta** version. Many of those features are still being expanded upon and many new ones will be added. Consider all
+> versions under `1.0.0` to be prone to many interface, functionality and API changes.
 
 ### With Cargo
 
@@ -52,11 +52,11 @@ cargo install databoxer
 
 1. Go to [Releases](https://github.com/duckysmacky/databoxer/releases)
 2. Select the version you want to download
-3. Download the binary for your system
+3. Download the binary for your system (Windows, Linux or macOS)
 
 ### From source
 
-_From latest commit at branch `master`_
+_From latest commit at `master` branch via Cargo_
 
 ```shell
 cargo install --git https://github.com/duckysmacky/copper.git
@@ -67,32 +67,17 @@ cargo install --git https://github.com/duckysmacky/copper.git
 ### 👤 Profile system
 
 One of the key features of Databoxer is its **profile management system**. The user of the application can create
-different profiles in order to store keys and manage file. Each profile has a unique encryption key which is later
-used to encrypt/decrypt files and can be protected by user-defined password.
+different profiles in order to store keys and manage encrypted files. Each profile has a unique encryption key which 
+is used to encrypt/decrypt files and can be protected by user-defined password.
 
-Later down the lineDataboxer is planned to have support for native
-toolchains, such as _GnuPG_ and _Kleopatra_ for UNIX-like systems and _CryptoAPI (CNG)_ for Windows in order to ensure safer key storage.
+_Later down the line Databoxer is planned to have support for native keyring toolchains, such as GnuPG, Kleopatra and
+CryptoAPI (CNG) (for Windows)._
 
-### 📦 "Boxfile" file format
+### 📦 Boxfile file format
 
-The encrypted files are "boxed" into a `.box` file and stored in that way on the drive. A "boxfile" is a custom file
-format which uses different techniques in order to ensure safety of the data, verify its content integrity and embed
-additional information about the file. It is a way of obfuscating the stored data combined with giving the program
-its unique features.
-
-A `.box` file consists of a _header_, _body_ and _checksum_.
-
-- **Header** contains all the publicly available information about the file: version of the boxfile version used, length of
-  random padding and per-file randomly generated `nonce`, which is user for encryption processes.
-
-- **Body** of the `.box` file is made up from two things: the actual original file data and randomly generated padding. The
-  original data consists of original file name, extension, edit and access times, and the actual file contents. Padding
-  is a randomly generated stream of bytes (from sizes 4-255) which acts as an obfuscation technique during encryption,
-  as it combined with file data to make it harder to access original information and mislead the bad actor.
-
-- **Checksum** is generated from the header and body content. It is a unique hash which represents the contents of the
-  pre-encrypted file data. During the decryption process file contents are hashed again and compared with the original
-  checksum to verify file data integrity.
+The encrypted files are "boxed" into a `.box` file and stored in that way on the drive. A Boxfile (`.box` file) is a 
+custom file format which uses different techniques in order to ensure safety of the data, verify its content integrity
+and embed additional information about the file.
 
 ## 🕹️ Usage
 
@@ -103,34 +88,33 @@ examples of some of the main commands.
 ### Encrypting files
 
 <details>
-
-<summary>Example</summary>
-
-<div>
-    <img alt="encryption" src="media/gif/encryption-full.gif">
-</div>
-
+  <summary>
+    Example demonstration (click to expand)
+  </summary>
+  <div>
+      <img alt="encryption gif" src="media/gif/encryption-full.gif">
+  </div>
 </details>
 
 ```shell
 databoxer box <PATH>...
 ```
 
-Multiple paths can be supplied for multi-file encryption, as well as directories (with optional recursive feature `-R`)
+Multiple paths can be supplied for multi-file encryption, as well as directories (with optional recursive feature `-R`).
 
 Output files will be encrypted and formatted into a custom `.box` file type with a random UUID as a name. User also
-can specify the output location for each file with a `-o` flag
+can specify the output location for each file with a `-o` flag. Additionally, the user can also enable metadata
+encryption with the `-e` flag, which will encrypt the file's metadata (name, size, etc.).
 
 ### Decrypting files
 
 <details>
-
-<summary>Example</summary>
-
-<div>
-    <img alt="decryption" src="media/gif/decryption-full.gif">
-</div>
-
+  <summary>
+    Example demonstration (click to expand)
+  </summary>
+  <div>
+      <img alt="decryption gif" src="media/gif/decryption-full.gif">
+  </div>
 </details>
 
 ```shell
@@ -138,25 +122,24 @@ databoxer unbox <PATH>...
 ```
 
 Functions similarly to encryption: support for multiple paths and directories. The original file name can be supplied
-instead of a UUID to easily identify files
+instead of a UUID to easily identify files (only if the metadata encryption wasn't enabled during encryption).
 
 The input files have to have a `.box` file type. During decryption the program will restore original file name and
-extension
+extension.
 
 ### Configuring profiles
 
 <details>
-
-<summary>Example</summary>
-
-<div>
-    <img alt="profiles" src="media/gif/profile-full.gif">
-</div>
-
+  <summary>
+    Example demonstration (click to expand)
+  </summary>
+  <div>
+    <img alt="profiles gif" src="media/gif/profile-full.gif">
+  </div>
 </details>
 
 ```shell
-databoxer profile <ACTION> <NAME>
+databoxer profile <ACTION>
 ```
 
 A new profile can be created with the `profile new` command. Each profile should have a name and password, which is
@@ -169,13 +152,12 @@ all other existing profiles.
 ### Manipulating encryption keys
 
 <details>
-
-<summary>Example</summary>
-
-<div>
-    <img alt="key" src="media/gif/key-set.gif">
-</div>
-
+  <summary>
+    Example demonstration (click to expand)
+  </summary>
+  <div>
+    <img alt="key gif" src="media/gif/key-set.gif">
+  </div>
 </details>
 
 ```shell
@@ -192,7 +174,7 @@ key to be accepted (refer to `key get` command's output for how the key should l
 ## 🧰 Development
 
 As stated previously this project is in very active development. The current implementation of many things might
-completely change by the time it is fully released.
+completely change by the time it is fully released (`1.0.0`).
 
 ### Feature plan
 
@@ -203,11 +185,28 @@ _These plans could change during future development_
 - [x] Multiple profiles/keys support
 - [ ] Support for custom user config (using `config.toml`)
 - [ ] File data compression
-- [ ] Improved profile storage (SQLite?)
+- [ ] Improved profile storage (local database)
 - [ ] Batch file encryption (`boxfile` archive)
-- [ ] Remote key storage support (Google Drive, etc)
 - [ ] OS-native toolchain support (GnuPG, Kleopatra, CryptoAPI, etc.)
 - [ ] GUI interface
+
+### Project structure
+
+```
+src/ - Source code
+|--- cli/ - CLI command handling
+|    |--- handlers/ - Command handlers
+|    |--- io/ - Input/output handling
+|--- core/ - Core functionality
+|    |--- app/ - Main application logic
+|    |--- data/ - File and data handling
+|    |--- encryption/ - Cryptography-related functionality
+|    |--- os/ - OS-specific functionality
+|--- utils/ - Utility functions
+|--- gui/ - GUI interface (planned)
+test/ - Integration & unit tests
+|--- common/ - Common test utilities
+```
 
 ### Contribution
 
