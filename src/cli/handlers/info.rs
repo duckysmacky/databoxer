@@ -3,10 +3,12 @@
 use clap::ArgMatches;
 use std::path::PathBuf;
 use crate::utils::path;
-use crate::{exits_on, log, options};
+use crate::core::error;
+use crate::{options, log, output};
 
-/// Handles the `databoxer info` subcommand
-pub fn handle_info(args: &ArgMatches) {
+/// Handles the `databoxer info` subcommand. Returns an exit code indicating the status of the 
+/// operation (0 for success, non-zero for errors).
+pub fn handle_info(args: &ArgMatches) -> i32 {
     let file_path = {
         let path = args.get_one::<String>("PATH").expect("File path is required");
         let paths = path::parse_paths(vec![PathBuf::from(path)], false);
@@ -21,17 +23,54 @@ pub fn handle_info(args: &ArgMatches) {
     let mut options = options::InformationOptions::default();
     options.show_unknown = args.get_flag("SHOW_UNKNOWN");
 
-    let file_info = crate::get_info(&file_path, options);
-    match file_info {
+    let mut exit_code = 0;
+    
+    log!(STATUS, "Retrieving information about '{}'...", file_path.display());
+    match crate::get_info(&file_path, options) {
         Ok(info_lines) => {
             log!(SUCCESS, "Displaying information about '{}':", file_path.display());
+            
             for line in info_lines {
-                println!(" - {}", line);
+                output!(list "{}", line);
             }
         }
         Err(err) => {
-            log!(ERROR, "Unable to get information about '{}'", file_path.display());
-            exits_on!(err; all);
+            log!(ERROR, "Unable to get information about '{}' ({})", file_path.to_string_lossy(), err.name());
+            exit_code = err.exit_code() as i32;
+
+            if handle_error(err) {
+                return exit_code;
+            }
         }
+    }
+    
+    exit_code
+}
+
+/// Handles the error based on its type and logs appropriate messages. If the error is critical, it 
+/// returns 'true' to indicate that the process should exit immediately. Otherwise, it returns 
+/// 'false', which allows the process to continue or exit gracefully.
+fn handle_error(err: error::Error) -> bool {
+    log!(ERROR, "{}", err.message());
+
+    if let Some(cause) = err.cause() {
+        log!(ERROR, "Caused by: {}", cause);
+    }
+
+    match err.get_type() {
+        error::ErrorType::ProfileError(kind) => {
+            match kind {
+                error::ProfileErrorKind::AuthenticationFailed => {
+                    log!(WARN, "Please check your password and try again.");
+                    true
+                }
+                error::ProfileErrorKind::NotSelected => {
+                    log!(WARN, "Please select a profile using 'databoxer profile set <name>' command.");
+                    true
+                }
+                _ => true
+            }
+        }
+        _ => true,
     }
 }

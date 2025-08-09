@@ -6,13 +6,14 @@ use std::collections::VecDeque;
 use std::ffi::OsStr;
 use crate::cli::handlers;
 use crate::utils::path;
-use crate::{exits_on, log, options};
+use crate::core::error;
+use crate::{options, log};
 
-/// Handles the `databoxer box` subcommand
-pub fn handle_box(args: &ArgMatches) -> (u32, u32) {
-    let mut total_files: u32 = 0;
-    let mut error_files: u32 = 0;
-
+/// Handles the `databoxer box` subcommand. Returns a tuple containing:
+/// - The total number of files processed
+/// - The number of successfully encrypted files
+/// - The exit code indicating the status of the operation (0 for success, non-zero for errors)
+pub fn handle_box(args: &ArgMatches) -> (u32, u32, i32) {
     let file_paths: Vec<PathBuf> = {
         let input_paths = handlers::get_path_vec(args, "PATH").expect("File path is required");
         let recursive = args.get_flag("RECURSIVE");
@@ -34,24 +35,68 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32) {
         options.output_paths = Some(deque);
     }
 
+    let total_files: u32 = file_paths.len() as u32;
+    let mut successful_files: u32 = 0;
+    let mut exit_code: i32 = 0;
+    
     // encrypt each file and handle errors accordingly
     for path in file_paths {
-        total_files += 1;
         let file_name = match args.get_flag("SHOW_FULL_PATH") {
             true => path.as_os_str().to_os_string(),
             false => path.file_name().unwrap_or(OsStr::new("<unknown file name>")).to_os_string()
         };
 
-        log!(INFO, "Encrypting {:?}", file_name);
+        log!(STATUS, "Encrypting {:?}...", file_name);
         match crate::encrypt(path.as_path(), &mut options) {
-            Ok(_) => log!(SUCCESS, "Successfully encrypted {:?}", file_name),
+            Ok(_) => {
+                log!(SUCCESS, "Successfully encrypted {:?}", file_name);
+                successful_files += 1;
+            },
             Err(err) => {
-                log!(ERROR, "Unable to encrypt '{}'", file_name.to_string_lossy());
-                exits_on!(err; IOError false; InvalidData false);
-                error_files += 1;
+                log!(ERROR, "Unable to encrypt '{}' ({})", file_name.to_string_lossy(), err.name());
+                exit_code = err.exit_code() as i32;
+                
+                if handle_error(err) {
+                    return (total_files, successful_files, exit_code);
+                }
             }
         }
     }
 
-    (total_files, error_files)
+    (total_files, successful_files, exit_code)
+}
+
+/// Handles the error based on its type and logs appropriate messages. If the error is critical, it 
+/// returns 'true' to indicate that the process should exit immediately. Otherwise, it returns 
+/// 'false', which allows the process to continue or exit gracefully.
+fn handle_error(err: error::Error) -> bool {
+    log!(ERROR, "{}", err.message());
+    
+    if let Some(cause) = err.cause() {
+        log!(ERROR, "Caused by: {}", cause);
+    }
+    
+    match err.get_type() {
+        error::ErrorType::ProfileError(kind) => {
+            match kind {
+                error::ProfileErrorKind::AuthenticationFailed => {
+                    log!(WARN, "Please check your password and try again.");
+                    true
+                }
+                error::ProfileErrorKind::NotSelected => {
+                    log!(WARN, "Please select a profile using 'databoxer profile set <name>' command.");
+                    true
+                }
+                _ => true
+            }
+        }
+        error::ErrorType::InvalidData(kind) => {
+            match kind {
+                error::InvalidDataKind::InvalidFile(_) => false,
+                _ => true
+            }
+        }
+        error::ErrorType::IOError(_) => false,
+        _ => true,
+    }
 }

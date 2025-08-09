@@ -4,7 +4,6 @@
 
 use std::path::PathBuf;
 use std::fmt::{self, Display, Formatter};
-use crate::log;
 
 /// Custom result type which should be used throughout the codebase for consistency and better
 /// error handling
@@ -73,15 +72,9 @@ impl Error {
     }
     
     /// Returns an error-specific exit code
-    pub fn exit_code(&self) -> i32 {
+    pub fn exit_code(&self) -> u8 {
         // TODO: Implement exit codes for each error type
         1
-    }
-
-    /// Default values for whether the error should result in program exiting with an error code
-    #[deprecated]
-    pub fn should_exit(&self) -> bool {
-        true
     }
 }
 
@@ -258,18 +251,6 @@ impl Display for ProfileErrorKind {
     }
 }
 
-/// General error printer which outputs the error itself and detailed information if needed
-#[deprecated]
-pub fn print_error(err: &Error) {
-    use crate::log;
-    
-    log!(ERROR, "{}", err.name());
-    log!(ERROR, "{}", err.message());
-    if let Some(cause) = err.cause() {
-        log!(ERROR, "Cause: {}", cause);
-    }
-}
-
 /// Macro used as a shortcut for creating a new Databoxer Core Error. The macro will automatically 
 /// import the necessary error types and create a new error instance.
 /// 
@@ -381,62 +362,6 @@ macro_rules! err_cmp {
                 }
             } else {
                 false
-            }
-        }
-    };
-}
-
-/// Macro to specify on which error kind the program will exit with an error code. Additionally,
-/// calls `error::print_error()` to log error and provide detailed information if needed
-/// 
-/// - Error kinds separated with a comma will be marked as exit-resulting: `exits_on!(err, OSError,
-/// ProfileError)`
-/// - If the error kinds are seperated with a semicolon, weather they should result in an exit will
-/// be decided by the boolean expression for the kind, else will decide depending on the default
-/// value: `exits_on!(err; IOError true; ProfileError false)`
-/// - `default` keyword will specify to exit on the error based on the default value:
-/// `exits_on!(err; default)`
-/// - `all` keyword will specify to exit no matter which error kind it is: `exits_on!(err; all)`
-#[macro_export]
-#[deprecated]
-macro_rules! exits_on {
-    ($err:expr; default) => {
-        use crate::core::error::print_error;
-        print_error(&$err);
-        if $err.should_exit() {
-            std::process::exit($err.exit_code());
-        }
-    };
-    ($err:expr; all) => {
-        use crate::core::error::print_error;
-        print_error(&$err);
-        std::process::exit($err.exit_code());
-    };
-    ($err:expr; $($err_type:ident),*) => {
-        use crate::core::error::{ErrorType, print_error};
-        print_error(&$err);
-        match $err.get_type() {
-            $(
-                ErrorType::$err_type(_) => std::process::exit($err.exit_code());
-            ),*
-            _ => {}
-        }
-    };
-    ($err:expr; $($err_type:ident $should:expr);*) => {
-        use crate::core::error::{ErrorType, print_error};
-        print_error(&$err);
-        match $err.get_type() {
-            $(
-                ErrorType::$err_type(_) => {
-                    if $should {
-                        std::process::exit($err.exit_code());
-                    }
-                }
-            ),*
-            _ => {
-                if $err.should_exit() {
-                    std::process::exit($err.exit_code());
-                }
             }
         }
     };

@@ -11,10 +11,11 @@ fn main() {
         // Launch GUI
         app::set_app_mode(AppMode::GUI);
         println!("GUI not available yet. For the full list of available CLI commands use --help");
-        process::exit(1);
+        process::exit(-1);
     } else {
         // Launch CLI
         app::set_app_mode(AppMode::CLI);
-        cli::run();
+        let code = cli::run();
+        process::exit(code);
     }
 }
