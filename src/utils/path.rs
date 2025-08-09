@@ -3,8 +3,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use crate::core::data::boxfile;
-use crate::core::error::IOErrorKind;
-use crate::{log, Error, Result};
+use crate::{log, new_err, Result};
 
 /// Opens and parses provided path, returning a flattened list of all found paths. Verifies if the
 /// given paths exists. In case of a directory being provided returns all paths inside of it. Can
@@ -14,8 +13,8 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
 
     for path in input_paths {
         if path.is_dir() {
-            if let Err(err) = read_dir(&path, &mut file_paths, recursive) {
-                log!(ERROR, "Unable to read directory '{}': {}", path.display(), err);
+            if let Err(_) = read_dir(&path, &mut file_paths, recursive) {
+                // TODO: improve error handling
                 continue;
             }
         } else if path.is_file() {
@@ -31,8 +30,8 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
 
             match search_for_original(path.parent().unwrap(), target_name) {
                 Ok(box_path) => file_paths.push(box_path),
-                Err(err) => {
-                    log!(ERROR, "Unable to find '{}' ({})", path.display(), err);
+                Err(_) => {
+                    log!(ERROR, "Unable to find '{}'", path.display());
                     continue;
                 }
             }
@@ -42,8 +41,8 @@ pub fn parse_paths(input_paths: Vec<PathBuf>, recursive: bool) -> Vec<PathBuf> {
 }
 
 fn read_dir(dir_path: &Path, file_paths: &mut Vec<PathBuf>, recursive: bool) -> Result<()> {
-    for entry in fs::read_dir(dir_path)? {
-        let path = entry?.path();
+    for entry in fs::read_dir(dir_path).map_err(|e| new_err!(IOError: Read, dir_path.into(); e))? {
+        let path = entry.map_err(|e| new_err!(IOError: Misc; e))?.path();
 
         if path.is_dir() && recursive {
             read_dir(&path, file_paths, true)?;
@@ -57,8 +56,8 @@ fn read_dir(dir_path: &Path, file_paths: &mut Vec<PathBuf>, recursive: bool) -> 
 
 /// Searches `.box` files within a directory for one which matches its original name with provided
 fn search_for_original(dir_path: &Path, target_name: String) -> Result<PathBuf> {
-    for entry in fs::read_dir(dir_path)? {
-        let path = entry?.path();
+    for entry in fs::read_dir(dir_path).map_err(|e| new_err!(IOError: Read, dir_path.into(); e))? {
+        let path = entry.map_err(|e| new_err!(IOError: Misc; e))?.path();
 
         if !path.is_file() || path.extension().is_none() { continue; }
         if let Some(ext) = path.extension() {
@@ -76,5 +75,5 @@ fn search_for_original(dir_path: &Path, target_name: String) -> Result<PathBuf> 
         }
     }
 
-    Err(Error::IOError(IOErrorKind::NotFound(target_name.into())))
+    Err(new_err!(IOError: NotFound, target_name.into(); "No matching .box file found"))
 }

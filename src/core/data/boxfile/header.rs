@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 use crate::core::data::boxfile::info;
 use crate::core::os::OS;
-use crate::{log, Key, Nonce};
+use crate::{log, new_err, Key, Nonce};
 use crate::core::encryption::cipher;
 
 /// The header for the `boxfile`, which contains extra information about the file. This
@@ -100,7 +100,8 @@ impl BoxfileHeader {
         log!(DEBUG, "Serializing Boxfile header");
 
         let config = bincode::config::standard();
-        let bytes = bincode::serde::encode_to_vec(&self, config)?;
+        let bytes = bincode::serde::encode_to_vec(&self, config)
+            .map_err(|e| new_err!(ParseError: Encoding, "Boxfile header".to_string(); e.to_string()))?;
 
         log!(DEBUG, "Boxfile header successfully serialized");
         Ok(bytes)
@@ -165,7 +166,8 @@ where
     pub fn encrypt(&mut self, encrypt_function: impl Fn(&[u8]) -> crate::Result<Vec<u8>>) -> crate::Result<()> {
         if let EncryptedField::Plaintext(data) = self {
             let config = bincode::config::standard();
-            let bytes = bincode::serde::encode_to_vec(data, config)?;
+            let bytes = bincode::serde::encode_to_vec(data, config)
+                .map_err(|e| new_err!(ParseError: Encoding, "Boxfile metadata field".to_string(); e.to_string()))?;
             let encrypted = encrypt_function(&bytes)?;
             *self = EncryptedField::Encrypted(encrypted.into());
         }
@@ -179,7 +181,8 @@ where
         if let EncryptedField::Encrypted(encrypted) = self {
             let decrypted = decrypt_function(&encrypted)?;
             let config = bincode::config::standard();
-            let (data, _): (T, usize) = bincode::serde::decode_from_slice(&decrypted, config)?;
+            let (data, _): (T, usize) = bincode::serde::decode_from_slice(&decrypted, config)
+                .map_err(|e| new_err!(ParseError: Decoding, "Boxfile metadata field".to_string(); e.to_string()))?;
             *self = EncryptedField::Plaintext(data);
         }
         Ok(())

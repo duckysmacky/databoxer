@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use crate::utils::io::{read_file, write_file};
 use crate::core::error::Result;
-use crate::log;
+use crate::{log, new_err};
 
 /// Name of the main configuration file
 const CONFIG_FILE_NAME: &str = "databoxer.toml";
@@ -48,7 +48,8 @@ impl DataboxerConfig {
 
         let config = match read_file(&config_file) {
             Ok(file_data) => {
-                let mut config: DataboxerConfig = toml::from_str(&file_data)?;
+                let mut config: DataboxerConfig = toml::from_str(&file_data)
+                    .map_err(|e| new_err!(ParseError: TOML, config_file.clone(); e))?;
                 config.file_path = config_file;
                 config
             },
@@ -57,7 +58,7 @@ impl DataboxerConfig {
                     log!(INFO, "'config.toml' file doesn't exist. Generating new default config");
                     Self::new(config_file)
                 } else {
-                    return Err(err.into());
+                    return Err(new_err!(IOError: Read, config_file.clone(); err));
                 }
             }
         };
@@ -81,9 +82,11 @@ impl DataboxerConfig {
     #[allow(dead_code)]
     pub fn save(&self) -> Result<()> {
         log!(DEBUG, "Saving configuration data to 'config.toml'");
-        let toml_data = toml::to_string(&self)?;
+        let toml_data = toml::to_string(&self)
+            .map_err(|e| new_err!(ParseError: TOML, self.file_path.clone(); e))?;
 
-        write_file(&self.file_path, &toml_data, true)?;
+        write_file(&self.file_path, &toml_data, true)
+            .map_err(|e| new_err!(IOError: Write, self.file_path.clone(); e))?;
         Ok(())
     }
 }

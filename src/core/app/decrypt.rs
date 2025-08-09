@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::fs;
 use crate::core::data::boxfile::Boxfile;
 use crate::core::{data, prompt};
-use crate::log;
+use crate::{log, new_err};
 use crate::utils::io;
 
 /// Decryption the file at provided path using current profile's key. Password is required to
@@ -95,8 +95,8 @@ pub fn decrypt(
         }
     };
     
-    io::write_bytes(&output_path, &file_data, true)?;
-    fs::remove_file(&input_path)?;
+    io::write_bytes(&output_path, &file_data, true).map_err(|e| new_err!(IOError: Write, output_path.to_path_buf(); e))?;
+    fs::remove_file(&input_path).map_err(|e| new_err!(IOError: Delete, input_path.to_path_buf(); e))?;
     
     profile.remove_associated_file(&input_path);
     profiles.save()?;

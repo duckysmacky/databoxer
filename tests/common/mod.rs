@@ -2,8 +2,7 @@
 
 use std::{fs, io};
 use std::path::Path;
-use databoxer::Error;
-use databoxer::options;
+use databoxer::{options, ErrorType};
 
 pub mod command;
 
@@ -22,15 +21,15 @@ pub fn setup() {
     select_options.password = Some(&password);
     
     databoxer::create_profile(PROFILE_NAME, create_options)
-        .unwrap_or_else(|err| match err {
-            Error::ProfileError(_) => println!("{}", err),
-            _ => panic!("Unable to create test profile: {}", err)
+        .unwrap_or_else(|err| match err.get_type() {
+            ErrorType::ProfileError(_) => println!("{}", err.message()),
+            _ => panic!("Unable to create test profile: {}", err.message())
         });
 
     databoxer::select_profile(PROFILE_NAME, select_options)
-        .unwrap_or_else(|err| match err {
-            Error::ProfileError(_) => println!("{}", err),
-            _ => panic!("Unable to select test profile: {}", err)
+        .unwrap_or_else(|err| match err.get_type() {
+            ErrorType::ProfileError(_) => println!("{}", err.message()),
+            _ => panic!("Unable to select test profile: {}", err.message())
         });
 
     copy_original_files()
@@ -44,9 +43,9 @@ pub fn cleanup() {
     delete_options.password = Some(&password);
     
     databoxer::delete_profile(PROFILE_NAME, delete_options)
-        .unwrap_or_else(|err| match err {
-            Error::ProfileError(_) => println!("{}", err),
-            _ => panic!("Unable to delete test profile: {}", err)
+        .unwrap_or_else(|err| match err.get_type() {
+            ErrorType::ProfileError(_) => println!("{}", err.message()),
+            _ => panic!("Unable to delete test profile: {}", err.message())
         });
 
     delete_test_files()

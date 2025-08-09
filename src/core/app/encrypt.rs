@@ -20,7 +20,7 @@ pub fn encrypt(
 
     if let Some(extension) = input_path.extension() {
         if extension == "box" {
-            return Err(new_err!(InvalidInput: InvalidFile, "Already encrypted"))
+            return Err(new_err!(InvalidData: InvalidFile, input_path.to_path_buf(); "File is already encrypted (has a .box extension)"));
         }
     }
 
@@ -68,7 +68,7 @@ pub fn encrypt(
     };
 
     boxfile.save_to(&output_path)?;
-    fs::remove_file(&input_path)?;
+    fs::remove_file(&input_path).map_err(|e| new_err!(IOError: Delete, input_path.to_path_buf(); e))?;
 
     profile.add_associated_file(&output_path);
     profile_data.save()?;

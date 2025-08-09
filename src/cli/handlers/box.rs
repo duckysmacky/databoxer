@@ -47,7 +47,7 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32) {
             Ok(_) => log!(SUCCESS, "Successfully encrypted {:?}", file_name),
             Err(err) => {
                 log!(ERROR, "Unable to encrypt '{}'", file_name.to_string_lossy());
-                exits_on!(err; IOError false; InvalidInput false);
+                exits_on!(err; IOError false; InvalidData false);
                 error_files += 1;
             }
         }

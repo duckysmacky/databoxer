@@ -44,7 +44,7 @@ pub fn handle_unbox(args: &ArgMatches) -> (u32, u32) {
             Ok(_) => log!(SUCCESS, "Successfully decrypted {:?}", path.file_name().unwrap().to_os_string()),
             Err(err) => {
                 log!(ERROR, "Unable to decrypt '{}'", file_name.to_string_lossy());
-                exits_on!(err; IOError false; InvalidInput false);
+                exits_on!(err; IOError false; InvalidData false);
                 error_files += 1;
             }
         }

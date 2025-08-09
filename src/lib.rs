@@ -4,7 +4,7 @@
 //! program code. It contains all the main functions related to the Databoxer's functionality, like
 //! encryption, decryption, key and profile management.
 
-pub use core::error::{Error, Result};
+pub use core::error::{Error, ErrorType, Result};
 pub use core::options;
 pub use core::encryption::cipher::{Checksum, Key, Nonce};
 
