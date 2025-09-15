@@ -73,8 +73,7 @@ impl Error {
     
     /// Returns an error-specific exit code
     pub fn exit_code(&self) -> u8 {
-        // TODO: Implement exit codes for each error type
-        1
+        self.r#type.exit_code()
     }
 }
 
@@ -104,6 +103,19 @@ pub enum ErrorType {
     /// Error related to anything to do with user's profile. This could mean profile not
     /// being found, no profile being currently selected or any other kind
     ProfileError(ProfileErrorKind),
+}
+
+impl ErrorType {
+    pub fn exit_code(&self) -> u8 {
+        match self {
+            ErrorType::IOError(k) => 1 + k.exit_code(),
+            ErrorType::OSError(k) => 2 + k.exit_code(),
+            ErrorType::InvalidData(k) => 3 + k.exit_code(),
+            ErrorType::CryptoError(k) => 4 + k.exit_code(),
+            ErrorType::ParseError(k) => 5 + k.exit_code(),
+            ErrorType::ProfileError(k) => 6 + k.exit_code(),
+        }
+    }
 }
 
 impl Display for ErrorType {
@@ -137,6 +149,20 @@ pub enum IOErrorKind {
     Misc,
 }
 
+impl IOErrorKind {
+    pub fn exit_code(&self) -> u8 {
+        match self {
+            IOErrorKind::Misc => 0,
+            IOErrorKind::Write(_) => 1,
+            IOErrorKind::Read(_) => 2,
+            IOErrorKind::Create(_) => 3,
+            IOErrorKind::Delete(_) => 4,
+            IOErrorKind::NotFound(_) => 5,
+            IOErrorKind::StandardIO => 6,
+        }
+    }
+}
+
 impl Display for IOErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match &self {
@@ -156,6 +182,14 @@ pub enum OSErrorKind {
     EnvVariable(String),
 }
 
+impl OSErrorKind {
+    pub fn exit_code(&self) -> u8 {
+        match self {
+            OSErrorKind::EnvVariable(_) => 1,
+        }
+    }
+}
+
 impl Display for OSErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -171,12 +205,23 @@ pub enum InvalidDataKind {
     InvalidHex(String),
     /// The length of *x* type is invalid
     InvalidLength(String),
-    /// Crucial data is missing, meaning the process cannot continue
-    MissingData(String),
     /// The provided file is invalid. This could mean that the file was
     /// already encrypted, decrypted or anything else which would mark it
     /// invalid in a given context. 
     InvalidFile(PathBuf),
+    /// Crucial data is missing, meaning the process cannot continue
+    MissingData(String),
+}
+
+impl InvalidDataKind {
+    pub fn exit_code(&self) -> u8 {
+        match self {
+            InvalidDataKind::InvalidHex(_) => 1,
+            InvalidDataKind::InvalidLength(_) => 2,
+            InvalidDataKind::InvalidFile(_) => 3,
+            InvalidDataKind::MissingData(_) => 4,
+        }
+    }
 }
 
 impl Display for InvalidDataKind {
@@ -197,6 +242,16 @@ pub enum CryptoErrorKind {
     Hash(String),
 }
 
+impl CryptoErrorKind {
+    pub fn exit_code(&self) -> u8 {
+        match self {
+            CryptoErrorKind::Encryption => 1,
+            CryptoErrorKind::Decryption => 2,
+            CryptoErrorKind::Hash(_) => 3,
+        }
+    }
+}
+
 impl Display for CryptoErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -214,6 +269,18 @@ pub enum ParseErrorKind {
     JSON(PathBuf, usize, usize),
     TOML(PathBuf),
     Boxfile(PathBuf),
+}
+
+impl ParseErrorKind {
+    pub fn exit_code(&self) -> u8 {
+        match self {
+            ParseErrorKind::Encoding(_) => 1,
+            ParseErrorKind::Decoding(_) => 2,
+            ParseErrorKind::JSON(..) => 3,
+            ParseErrorKind::TOML(_) => 4,
+            ParseErrorKind::Boxfile(_) => 5,
+        }
+    }
 }
 
 impl Display for ParseErrorKind {
@@ -236,6 +303,19 @@ pub enum ProfileErrorKind {
     AlreadyExists(String),
     AuthenticationFailed,
     MismatchedProfile,
+}
+
+impl ProfileErrorKind {
+    pub fn exit_code(&self) -> u8 {
+        match self {
+            ProfileErrorKind::NotFound(_) => 1,
+            ProfileErrorKind::NotSelected => 2,
+            ProfileErrorKind::AlreadySelected(_) => 3,
+            ProfileErrorKind::AlreadyExists(_) => 4,
+            ProfileErrorKind::AuthenticationFailed => 5,
+            ProfileErrorKind::MismatchedProfile => 6,
+        }
+    }
 }
 
 impl Display for ProfileErrorKind {
