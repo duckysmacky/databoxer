@@ -54,7 +54,7 @@ impl Boxfile {
     /// Checksum is generated at the very end from the header and body content.
     pub fn new(file_path: &Path, generate_padding: bool, encrypt_header_data: bool) -> Result<Self> {
         log!(DEBUG, "Initializing boxfile from {:?}", file_path);
-        let file_data = io::read_bytes(&file_path)?;
+        let file_data = io::read_bytes(&file_path).map_err(|e| new_err!(IOError: Read, file_path.to_path_buf(); e))?;
         let mut padding_len = 0;
         let body: Box<[u8]> = match generate_padding {
             true => {
@@ -99,14 +99,14 @@ impl Boxfile {
             }
         }
 
-        let bytes = io::read_bytes(file_path)?;
+        let bytes = io::read_bytes(file_path).map_err(|e| new_err!(IOError: Read, file_path.to_path_buf(); e))?;
         if bytes.len() < 4 {
-            return Err(new_err!(InvalidInput: InvalidFile, "Too small to be parsed correctly"))
+            return Err(new_err!(ParseError: Boxfile, file_path.into(); "File is too small to be parsed correctly"))
         }
         
         let magic = &bytes[..3];
         if magic != &info::MAGIC[..3] {
-            return Err(new_err!(InvalidInput: InvalidFile, "Not a valid boxfile"))
+            return Err(new_err!(ParseError: Boxfile, file_path.into(); "File is not a valid boxfile"))
         }
         
         let version = &bytes[3];
@@ -117,7 +117,7 @@ impl Boxfile {
         // TODO: add custom configuration options
         let config = bincode::config::standard();
         let (boxfile, _bytes): (Boxfile, usize) = bincode::serde::decode_from_slice(&bytes, config)
-            .map_err(|err| new_err!(SerializeError: BoxfileParseError, err))?;
+            .map_err(|err| new_err!(ParseError: Decoding, err.to_string()))?;
 
         log!(DEBUG, "Boxfile deserialized");
         Ok(boxfile)
@@ -159,8 +159,8 @@ impl Boxfile {
 
         let config = bincode::config::standard();
         let bytes = bincode::serde::encode_to_vec(&self, config)
-            .map_err(|err| new_err!(SerializeError: BoxfileParseError, err))?;
-        io::write_bytes(path, &bytes, true)?;
+            .map_err(|err| new_err!(ParseError: Encoding, err.to_string()))?;
+        io::write_bytes(path, &bytes, true).map_err(|e| new_err!(IOError: Write, path.to_path_buf(); e))?;
 
         Ok(())
     }
@@ -200,7 +200,7 @@ impl Boxfile {
         let padding_len = self.header.padding_len;
         let data_len = self.body.len() as i32 - padding_len as i32;
         if data_len < 0 {
-            return Err(new_err!(SerializeError: BoxfileParseError, "Invalid file data length"))
+            return Err(new_err!(InvalidData: InvalidLength, "Boxfile body".to_string(); "Less than padding length or zero"));
         }
         let file_data = &self.body[..data_len as usize];
         Ok(file_data.into())

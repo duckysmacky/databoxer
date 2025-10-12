@@ -19,7 +19,8 @@ pub fn get_data_dir() -> Result<PathBuf> {
     }
 
     if !data_dir.exists() {
-        fs::create_dir_all(&data_dir)?;
+        fs::create_dir_all(&data_dir)
+            .map_err(|e| new_err!(IOError: Create, data_dir.clone(); e))?;
     }
     Ok(data_dir)
 }
@@ -38,7 +39,8 @@ pub fn get_config_dir() -> Result<PathBuf> {
     }
 
     if !config_dir.exists() {
-        fs::create_dir_all(&config_dir)?;
+        fs::create_dir_all(&config_dir)
+            .map_err(|e| new_err!(IOError: Create, config_dir.clone(); e))?;
     }
     Ok(config_dir)
 }
@@ -55,8 +57,7 @@ fn get_env_home() -> Result<PathBuf> {
     };
     
     let home_path = env::var(env)
-        .map_err(|_| new_err!(OSError: EnvVariableUnavailable, env))?;
-
-    let config_dir = PathBuf::from(home_path);
-    Ok(config_dir)
+        .map_err(|_| new_err!(OSError: EnvVariable, env.to_string()))?;
+    
+    Ok(PathBuf::from(home_path))
 }

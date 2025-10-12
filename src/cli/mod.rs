@@ -1,13 +1,15 @@
 //! Contains everything related to the CLI wrapper around the Databoxer API
 
 use std::time::Instant;
+use crate::log;
 
 pub mod logger;
 pub mod io;
 mod handlers;
 mod command;
 
-pub fn run() {
+/// Runs the CLI application, handling subcommands and their arguments. Returns an exit code.
+pub fn run() -> i32 {
     let global_args = &command::get_command().get_matches();
 
     logger::configure_logger(&global_args);
@@ -15,57 +17,53 @@ pub fn run() {
     /* BOX */
     if let Some(args) = global_args.subcommand_matches("box") {
         let start_time = Instant::now();
-        let (total, error) = handlers::handle_box(args);
+        let (total, successful, code) = handlers::handle_box(args);
 
         let duration = start_time.elapsed();
-        println!("[{}/{}] files encrypted", total - error, total);
-        println!("Total time taken: {:.2?}", duration);
+        log!(STATUS, "[{}/{}] files encrypted", successful, total);
+        log!(STATUS, "Total time taken: {:.2?}", duration);
 
-        if total == error {
-            std::process::exit(1);
-        }
+        return code;
     }
 
     /* UNBOX */
     if let Some(args) = global_args.subcommand_matches("unbox") {
         let start_time = Instant::now();
-        let (total, error) = handlers::handle_unbox(args);
+        let (total, successful, code) = handlers::handle_unbox(args);
 
         let duration = start_time.elapsed();
-        println!("[{}/{}] files decrypted", total - error, total);
-        println!("Total time taken: {:.2?}", duration);
+        log!(STATUS, "[{}/{}] files decrypted", successful, total);
+        log!(STATUS, "Total time taken: {:.2?}", duration);
 
-        if total == error {
-            std::process::exit(1);
-        }
+        return code;
     }
 
     /* INFORMATION */
     if let Some(args) = global_args.subcommand_matches("info") {
-        handlers::handle_info(args);
+        return handlers::handle_info(args);
     }
 
     /* PROFILE */
     if let Some(args) = global_args.subcommand_matches("profile") {
         /* PROFILE CREATE */
         if let Some(args) = args.subcommand_matches("new") {
-            handlers::handle_profile_create(args);
+            return handlers::handle_profile_create(args);
         }
         /* PROFILE DELETE */
         if let Some(args) = args.subcommand_matches("delete") {
-            handlers::handle_profile_delete(args);
+            return handlers::handle_profile_delete(args);
         }
         /* PROFILE SET */
         if let Some(args) = args.subcommand_matches("set") {
-            handlers::handle_profile_set(args);
+            return handlers::handle_profile_set(args);
         }
         /* PROFILE GET */
         if let Some(args) = args.subcommand_matches("get") {
-            handlers::handle_profile_get(args);
+            return handlers::handle_profile_get(args);
         }
         /* PROFILE LIST */
         if let Some(args) = args.subcommand_matches("list") {
-            handlers::handle_profile_list(args);
+            return handlers::handle_profile_list(args);
         }
     }
 
@@ -73,15 +71,17 @@ pub fn run() {
     if let Some(args) = global_args.subcommand_matches("key") {
         /* KEY NEW */
         if let Some(args) = args.subcommand_matches("new") {
-            handlers::handle_key_new(args);
+            return handlers::handle_key_new(args);
         }
         /* KEY GET */
         if let Some(args) = args.subcommand_matches("get") {
-            handlers::handle_key_get(args);
+            return handlers::handle_key_get(args);
         }
         /* KEY SET */
         if let Some(args) = args.subcommand_matches("set") {
-            handlers::handle_key_set(args);
+            return handlers::handle_key_set(args);
         }
     }
+    
+    -1
 }

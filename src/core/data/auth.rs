@@ -13,24 +13,25 @@ pub fn hash_password(password: &str) -> Result<(String, Key)> {
 
     let argon2 = Argon2::default();
     let password_hash = argon2.hash_password(password.as_bytes(), &salt)
-        .map_err(|err| new_err!(EncryptionError: HashError, err))?.to_string();
+        .map_err(|err| new_err!(CryptoError: Hash, "Profile password".to_string(); err))?.to_string();
     argon2.hash_password_into(password.as_bytes(), salt.as_str().as_bytes(), &mut password_key)
-        .map_err(|err| new_err!(EncryptionError: HashError, err))?;
+        .map_err(|err| new_err!(CryptoError: Hash, "Key from profile password".to_string(); err))?;
     Ok((password_hash, password_key))
 }
 
 /// Verifies password by comparing it to the password hash, returning password hash's Salt 
 /// if the verification is successful. Errors if the Salt is missing
+// TODO: refactor to return a bool instead of relaying on Result
 pub fn verify_password<'a>(password_hash: &'a str, password: &str) -> Result<Salt<'a>> {
     let hash = PasswordHash::new(password_hash)
-        .map_err(|_| new_err!(InvalidData: InvalidLength, "password hash"))?;
+        .map_err(|_| new_err!(InvalidData: InvalidLength, "Password hash".to_string()))?;
 
     let argon2 = Argon2::default();
     argon2.verify_password(password.as_bytes(), &hash)
         .map_err(|_| new_err!(ProfileError: AuthenticationFailed))?;
     
     let salt = hash.salt
-        .ok_or_else(|| new_err!(InvalidData: MissingData, "Salt for the password hash"))?;
+        .ok_or_else(|| new_err!(InvalidData: MissingData, "Salt for the password hash".to_string()))?;
     Ok(salt)
 }
 
@@ -42,7 +43,7 @@ pub fn get_password_key(password_hash: &str, password: &str) -> Result<Key> {
     
     let argon2 = Argon2::default();
     argon2.hash_password_into(password.as_bytes(), salt.as_str().as_bytes(), &mut password_key)
-        .map_err(|err| new_err!(EncryptionError: HashError, err))?;
+        .map_err(|err| new_err!(CryptoError: Hash, "Key from profile password".to_string(); err))?;
     Ok(password_key)
 }
 

@@ -23,7 +23,7 @@ pub fn string_to_bytes(hex_string: &str) -> Result<Vec<u8>> {
     let mut hex_bytes = vec![0u8; hex_string.len() / 2];
 
     if hex_string.len() % 2 != 0 {
-        return Err(new_err!(InvalidData: InvalidHex, "Length is not a multiple of 2"));
+        return Err(new_err!(InvalidData: InvalidHex, hex_string.to_string(); "Length is not a multiple of 2"));
     }
     
     let mut i: usize = 0;
@@ -33,7 +33,7 @@ pub fn string_to_bytes(hex_string: &str) -> Result<Vec<u8>> {
         let c2: char = hex_string.chars().nth(i + 1).unwrap();
         
         if !HEX_CHARS.contains(c1) || !HEX_CHARS.contains(c2) {
-            return Err(new_err!(InvalidData: InvalidHex, format!("Invalid byte '{}{}'", c1, c2)))
+            return Err(new_err!(InvalidData: InvalidHex, format!("at byte '{}{}'", c1, c2); "Invalid hex character"));
         }
         
         // we can just unwrap this too since we sanity-checked the characmers beforehand

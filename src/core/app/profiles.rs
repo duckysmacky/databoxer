@@ -45,7 +45,7 @@ pub fn select(
 
     if let Ok(profile) = profiles.get_current_profile() {
         if profile_name == profile.name {
-            return Err(new_err!(ProfileError: AlreadySelected, profile_name))
+            return Err(new_err!(ProfileError: AlreadySelected, profile_name.to_string()));
         }
     }
 

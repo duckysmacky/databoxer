@@ -42,7 +42,8 @@ impl ProfileData {
 
         let profiles = match read_file(&profiles_file) {
             Ok(file_data) => {
-                let mut profiles: ProfileData = serde_json::from_str(&file_data)?;
+                let mut profiles: ProfileData = serde_json::from_str(&file_data)
+                    .map_err(|e| new_err!(ParseError: JSON, profiles_file.clone(), e.line(), e.column(); e))?;
                 profiles.file_path = profiles_file;
                 profiles
             },
@@ -51,7 +52,7 @@ impl ProfileData {
                     log!(INFO, "'profiles.json' file doesn't exist. Generating new profiles data");
                     Self::new(profiles_file)
                 } else {
-                    return Err(err.into());
+                    return Err(new_err!(IOError: Read, profiles_file; err));
                 }
             }
         };
@@ -126,7 +127,7 @@ impl ProfileData {
             }
         }
 
-        Err(new_err!(ProfileError: NotFound, profile_name))
+        Err(new_err!(ProfileError: NotFound, profile_name.to_string()))
     }
 
     /// Saves provided profile data to profiles file. Updates existing profile or creates a new one,
@@ -183,15 +184,16 @@ impl ProfileData {
             }
         }
 
-        Err(new_err!(ProfileError: NotFound, profile_name))
+        Err(new_err!(ProfileError: NotFound, profile_name.to_string()))
     }
 
     /// Writes to the profile data file. Overwrites old data
     pub fn save(&self) -> Result<()> {
         log!(DEBUG, "Saving profiles data to 'profiles.json'");
-        let json_data = serde_json::to_string_pretty(&self)?;
+        let json_data = serde_json::to_string_pretty(&self)
+            .map_err(|e| new_err!(ParseError: JSON, self.file_path.clone(), e.line(), e.column(); e))?;
 
-        write_file(&self.file_path, &json_data, true)?;
+        write_file(&self.file_path, &json_data, true).map_err(|e| new_err!(IOError: Write, self.file_path.clone(); e))?;
         Ok(())
     }
 }
@@ -255,7 +257,7 @@ impl Profile {
         let encrypted_key = self.key.clone();
         let password_key = auth::get_password_key(&self.password_hash, password)?;
         let key = cipher::decrypt(&password_key, &self.nonce, &encrypted_key)?.try_into()
-            .map_err(|_| new_err!(InvalidData: InvalidLength, "encryption key"))?;
+            .map_err(|_| new_err!(InvalidData: InvalidLength, "encryption key".to_string()))?;
 
         Ok(key)
     }

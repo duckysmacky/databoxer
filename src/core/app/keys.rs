@@ -43,11 +43,11 @@ pub fn set(
 ) -> crate::Result<()> {
     log!(INFO, "Setting the encryption key from the current profile");
     
-    let new_key = hex::string_to_bytes(new_key)?;
-    if new_key.len() != 32 {
-        return Err(new_err!(InvalidData: InvalidHex, "Provided hex is not a 32-byte key"))
+    let key_bytes = hex::string_to_bytes(new_key)?;
+    if key_bytes.len() != 32 {
+        return Err(new_err!(InvalidData: InvalidHex, new_key.to_string(); "Provided hex is not a 32-byte key"))
     }
-    let new_key = Key::try_from(&new_key[..32]).unwrap();
+    let new_key = Key::try_from(&key_bytes[..32]).unwrap();
     let password = match password {
         None => prompt::prompt_password()?,
         Some(p) => p.to_string()
