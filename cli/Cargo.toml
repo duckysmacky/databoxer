@@ -23,5 +23,13 @@ databoxer-core = { workspace = true }
 clap = { workspace = true }
 paste = { workspace = true }
 
+# unix
+[target.'cfg(unix)'.dependencies]
+libc = { workspace = true }
+
+# windows
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true }
+
 [dev-dependencies]
 rand = { workspace = true }

@@ -14,8 +14,8 @@ pub mod encryption;
 pub mod options;
 pub mod logs;
 pub mod error;
+pub mod prompt;
 
-mod prompt;
 mod os;
 mod hex;
 mod io;

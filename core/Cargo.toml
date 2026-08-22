@@ -24,11 +24,3 @@ uuid = { workspace = true }
 lazy_static = { workspace = true }
 paste = { workspace = true }
 chrono = { workspace = true }
-
-# unix
-[target.'cfg(unix)'.dependencies]
-libc = { workspace = true }
-
-# windows
-[target.'cfg(windows)'.dependencies]
-windows-sys = { workspace = true }

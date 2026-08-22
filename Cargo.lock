@@ -286,8 +286,10 @@ version = "0.2.0"
 dependencies = [
  "clap",
  "databoxer-core",
+ "libc",
  "paste",
  "rand",
+ "windows-sys",
 ]
 
 [[package]]
@@ -299,7 +301,6 @@ dependencies = [
  "chacha20poly1305",
  "chrono",
  "lazy_static",
- "libc",
  "paste",
  "rand",
  "serde",
@@ -307,7 +308,6 @@ dependencies = [
  "sha2",
  "toml",
  "uuid",
- "windows-sys",
 ]
 
 [[package]]
