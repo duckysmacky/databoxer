@@ -1,0 +1,34 @@
+[package]
+name = "databoxer-core"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+# serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+toml = { workspace = true }
+
+# encryption
+chacha20poly1305 = { workspace = true }
+rand = { workspace = true }
+sha2 = { workspace = true }
+argon2 = { workspace = true }
+
+# utility
+uuid = { workspace = true }
+lazy_static = { workspace = true }
+paste = { workspace = true }
+chrono = { workspace = true }
+
+# unix
+[target.'cfg(unix)'.dependencies]
+libc = { workspace = true }
+
+# windows
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true }

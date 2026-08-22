@@ -1,0 +1,27 @@
+[package]
+name = "databoxer-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Fast and easy to use CLI-based file encryption program"
+readme = "../README.md"
+license-file = "../LICENSE"
+repository.workspace = true
+keywords = ["security", "encryption", "cli", "data-storage"]
+categories = ["command-line-utilities", "cryptography"]
+
+[lib]
+name = "databoxer_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "databoxer"
+path = "src/main.rs"
+
+[dependencies]
+databoxer-core = { workspace = true }
+clap = { workspace = true }
+paste = { workspace = true }
+
+[dev-dependencies]
+rand = { workspace = true }

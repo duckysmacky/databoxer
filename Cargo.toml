@@ -1,26 +1,18 @@
-[package]
-name = "databoxer"
+[workspace]
+resolver = "2"
+members = [
+    "core",
+    "cli"
+]
+
+[workspace.package]
 version = "0.2.0"
 edition = "2021"
 authors = ["Nikita Doronin <nikdorkir@gmail.com>"]
-description = "Fast and easy to use CLI-based file encryption program"
-readme = "README.md"
-license-file = "LICENSE"
 repository = "https://github.com/duckysmacky/databoxer"
-keywords = ["security", "encryption", "cli", "data-storage"]
-categories = ["command-line-utilities", "cryptography"]
-exclude = ["/.github", "/.idea", "/files", "/media"]
 
-[lib]
-path = "src/lib.rs"
-
-[[bin]]
-name = "databoxer"
-path = "src/main.rs"
-
-[dependencies]
-# cli
-clap = { version = "4.5.38", features = ["cargo"] }
+[workspace.dependencies]
+databoxer-core = { path = "core" }
 
 # serialization
 serde = { version = "1.0.219", features = ["derive"] }
@@ -34,6 +26,9 @@ rand = "0.9.1"
 sha2 = "0.10.8"
 argon2 = "0.5.3"
 
+# cli
+clap = { version = "4.5.38", features = ["cargo"] }
+
 # utility
 uuid = { version = "1.16.0", features = ["v4", "fast-rng"] }
 lazy_static = "1.5.0"
@@ -41,9 +36,7 @@ paste = "1.0.15"
 chrono = "0.4.41"
 
 # unix
-[target.'cfg(unix)'.dependencies]
 libc = "0.2.169"
 
 # windows
-[target.'cfg(windows)'.dependencies]
 windows-sys = "0.59.0"

@@ -281,14 +281,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "databoxer"
+name = "databoxer-cli"
+version = "0.2.0"
+dependencies = [
+ "clap",
+ "databoxer-core",
+ "paste",
+ "rand",
+]
+
+[[package]]
+name = "databoxer-core"
 version = "0.2.0"
 dependencies = [
  "argon2",
  "bincode",
  "chacha20poly1305",
  "chrono",
- "clap",
  "lazy_static",
  "libc",
  "paste",
