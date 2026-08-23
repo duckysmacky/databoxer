@@ -1,25 +1,39 @@
-use std::io::Write;
-use std::io;
-use databoxer_core::io::input::PasswordPrompter;
+use std::io::{self, BufRead, Write};
+use databoxer_core::io::input::InputPrompter;
 use databoxer_core::io::log::LogType;
 
-pub fn prompt(prompt_text: &str) -> io::Result<String> {
-    let mut stdout = io::stdout().lock();
-    write!(stdout, "[{}] {}: ", LogType::INPUT.icon(), prompt_text)?;
+/// CLI implementation of `InputPrompter`
+pub struct CliInputPrompter;
 
-    let mut input = String::new();
-    io::stdin().read_line(&mut input)?;
-    println!();
+impl InputPrompter for CliInputPrompter {
+    fn prompt_line(&self, message: &str) -> io::Result<String> {
+        let mut stdout = io::stdout().lock();
+        write!(stdout, "[{}] {}: ", LogType::INPUT.icon(), message)?;
 
-    Ok(input.trim().to_string())
-}
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
 
-/// CLI implementation of `databoxer_core::io::input::PasswordPrompter`, prompting for a password
-/// with hidden terminal input
-pub struct CliPasswordPrompter;
+        Ok(input.trim().to_string())
+    }
 
-impl PasswordPrompter for CliPasswordPrompter {
-    fn prompt_password(&self, message: &str) -> io::Result<String> {
+    fn prompt_lines(&self, message: &str) -> io::Result<Vec<String>> {
+        let mut stdout = io::stdout().lock();
+        writeln!(stdout, "[{}] {} (blank line to finish):", LogType::INPUT.icon(), message)?;
+
+        let stdin = io::stdin();
+        let mut lines = Vec::new();
+        for line in stdin.lock().lines() {
+            let line = line?;
+            if line.is_empty() {
+                break;
+            }
+            lines.push(line);
+        }
+
+        Ok(lines)
+    }
+
+    fn prompt_hidden(&self, message: &str) -> io::Result<String> {
         let mut stdout = io::stdout().lock();
         write!(stdout, "[{}] {}: ", LogType::INPUT.icon(), message)?;
         read_hidden()
@@ -30,7 +44,6 @@ impl PasswordPrompter for CliPasswordPrompter {
 fn read_hidden() -> io::Result<String> {
     use std::mem;
     use std::fs::File;
-    use std::io::BufRead;
     use std::os::fd::RawFd;
     use std::os::unix::io::AsRawFd;
     use libc::{termios, tcgetattr, tcsetattr, ECHO, TCSANOW, ECHONL};
