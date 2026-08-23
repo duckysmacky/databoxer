@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 pub mod data;
 
 /// Enum representing one of the possible operating systems
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OS {
     WINDOWS, MACOS, LINUX, OTHER
 }

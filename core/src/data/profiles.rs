@@ -93,9 +93,16 @@ impl ProfileData {
     }
 
     /// Sets the current profile to profile which name was supplied. Returns an error if given
-    /// profile doesn't exist
+    /// profile doesn't exist, or if it is already the current one
     pub fn set_current(&mut self, password: &str, profile_name: &str) -> Result<()> {
         log!(DEBUG, "Setting current profile to '{}'", profile_name);
+
+        // a missing profile is reported as such, even when its name matches the current one
+        self.find_profile(profile_name)?;
+
+        if self.current_profile.as_deref() == Some(profile_name) {
+            return Err(new_err!(ProfileError: AlreadySelected, profile_name.to_string()));
+        }
 
         let profile = self.find_profile(profile_name)?;
         profile.verify_password(password)?;
@@ -281,6 +288,7 @@ impl Profile {
 #[cfg(test)]
 mod tests {
     use crate::os::data;
+    use crate::err_cmp;
     use super::*;
     
     /// Creates the `profiles.json` file in the program data directory and fills it with default
@@ -303,6 +311,30 @@ mod tests {
         profile.verify_password(PASSWORD)
     }
     
+    /// Selecting the profile which is already current is rejected, while a profile which doesn't
+    /// exist is reported as missing even when it shares the current profile's name
+    #[test]
+    fn test_set_current_guards() -> Result<()> {
+        const PASSWORD: &str = "test-password123";
+
+        let mut data = ProfileData::new(PathBuf::from("profiles.json"));
+        data.profiles.push(Profile::new("first", PASSWORD)?);
+        data.profiles.push(Profile::new("second", PASSWORD)?);
+        data.current_profile = Some("first".to_string());
+
+        let already_selected = data.set_current(PASSWORD, "first").unwrap_err();
+        assert!(err_cmp!(already_selected, ProfileError, AlreadySelected()));
+
+        let not_found = data.set_current(PASSWORD, "missing").unwrap_err();
+        assert!(err_cmp!(not_found, ProfileError, NotFound()));
+
+        data.current_profile = Some("gone".to_string());
+        let stale_current = data.set_current(PASSWORD, "gone").unwrap_err();
+        assert!(err_cmp!(stale_current, ProfileError, NotFound()));
+
+        Ok(())
+    }
+
     /// Tests if the originally set key will be equal to the decrypted key
     #[test]
     fn test_profile_key_encryption() -> Result<()> {
