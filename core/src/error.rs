@@ -77,7 +77,21 @@ impl Error {
     }
 }
 
-/// Contains different types of errors for each category, both simple errors with a single message 
+/// Renders the error's message, followed by its cause if one was recorded
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match &self.cause {
+            Some(cause) => write!(f, "{}: {}", self.message(), cause),
+            None => write!(f, "{}", self.message()),
+        }
+    }
+}
+
+/// The cause is stored as a string rather than the original error, so there is no `source` to
+/// report. Implemented so that this error composes with the rest of the ecosystem
+impl std::error::Error for Error {}
+
+/// Contains different types of errors for each category, both simple errors with a single message
 /// and complex enum errors with different kinds. These custom error types should cover most of the
 /// possible program errors which can occur within the core part of the logic.
 /// 
@@ -106,15 +120,18 @@ pub enum ErrorType {
 }
 
 impl ErrorType {
+    /// Returns an exit code which is unique to this error type and kind. The type occupies the
+    /// tens digit and the kind the ones, so that codes cannot collide across types
     pub fn exit_code(&self) -> u8 {
-        match self {
-            ErrorType::IOError(k) => 1 + k.exit_code(),
-            ErrorType::OSError(k) => 2 + k.exit_code(),
-            ErrorType::InvalidData(k) => 3 + k.exit_code(),
-            ErrorType::CryptoError(k) => 4 + k.exit_code(),
-            ErrorType::ParseError(k) => 5 + k.exit_code(),
-            ErrorType::ProfileError(k) => 6 + k.exit_code(),
-        }
+        let (type_code, kind_code) = match self {
+            ErrorType::IOError(k) => (1, k.exit_code()),
+            ErrorType::OSError(k) => (2, k.exit_code()),
+            ErrorType::InvalidData(k) => (3, k.exit_code()),
+            ErrorType::CryptoError(k) => (4, k.exit_code()),
+            ErrorType::ParseError(k) => (5, k.exit_code()),
+            ErrorType::ProfileError(k) => (6, k.exit_code()),
+        };
+        type_code * 10 + kind_code
     }
 }
 
