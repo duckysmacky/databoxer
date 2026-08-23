@@ -156,6 +156,23 @@ pub enum EncryptedField<T> {
     Encrypted(Box<[u8]>),
 }
 
+impl<T> EncryptedField<T> {
+    /// Returns the contained value if the field holds plaintext, else `None`. Encrypted and empty
+    /// fields are indistinguishable to a caller which has not decrypted the header
+    pub fn plaintext(&self) -> Option<&T> {
+        match self {
+            EncryptedField::Plaintext(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Returns whether the field is empty (is an `Empty` value). Used together with serde to skip
+    /// empty field values to save disk space
+    pub fn is_empty(&self) -> bool {
+        matches!(self, EncryptedField::Empty)
+    }
+}
+
 impl<T> EncryptedField<T>
 where
     T: serde::Serialize + for<'de> serde::Deserialize<'de>
@@ -186,12 +203,6 @@ where
             *self = EncryptedField::Plaintext(data);
         }
         Ok(())
-    }
-
-    /// Returns whether the field is empty (is an `Empty` value). Used together with serde to skip
-    /// empty field values to save disk space
-    pub fn is_empty(&self) -> bool {
-        matches!(self, EncryptedField::Empty)
     }
 }
 

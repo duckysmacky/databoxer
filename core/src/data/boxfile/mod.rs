@@ -1,7 +1,7 @@
 mod boxfile;
 mod header;
 
-pub use boxfile::Boxfile;
+pub use boxfile::{Boxfile, FileMetadata};
 pub use header::*;
 
 mod info {

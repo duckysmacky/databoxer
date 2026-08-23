@@ -6,11 +6,28 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::Path;
 use std::iter;
+use std::time::SystemTime;
 use crate::{log, new_err, Checksum, Key, Result};
 use crate::{hex, io::fs};
 use crate::encryption::cipher;
-use super::header::{BoxfileHeader, EncryptedField};
+use crate::os::OS;
+use super::header::BoxfileHeader;
 use super::info;
+
+/// The original file's information, as recovered from a `boxfile` header. Any field which was
+/// never recorded, or which is still encrypted, comes back as `None`
+#[derive(Debug)]
+pub struct FileMetadata {
+    /// Whether the header's original file data is stored encrypted. While true, every other field
+    /// here is `None` until the header has been decrypted
+    pub metadata_encrypted: bool,
+    pub name: Option<String>,
+    pub extension: Option<String>,
+    pub source_os: Option<OS>,
+    pub create_time: Option<SystemTime>,
+    pub modify_time: Option<SystemTime>,
+    pub access_time: Option<SystemTime>,
+}
 
 /// Struct representing a `boxfile` structure. A "boxfile" is the custom file 
 /// format for databoxer which contains the encrypted data of a file, alongside
@@ -123,18 +140,27 @@ impl Boxfile {
         Ok(boxfile)
     }
 
-    /// Returns the information about the file contained within the `boxfile`: original file name, 
+    /// Returns the information about the file contained within the `boxfile`: original file name,
     /// and extension
     pub fn file_info(&self) -> (Option<&String>, Option<&String>) {
-        let name = match &self.header.name {
-            EncryptedField::Plaintext(value) => Some(value),
-            _ => None,
-        };
-        let extension = match &self.header.extension {
-            EncryptedField::Plaintext(value) => Some(value),
-            _ => None,
-        };
-        (name, extension)
+        (self.header.name.plaintext(), self.header.extension.plaintext())
+    }
+
+    /// Returns everything the header records about the original file. Fields which were never
+    /// recorded, or which are still encrypted, come back as `None` - decrypt the boxfile first to
+    /// read the metadata of a file which was boxed with metadata encryption enabled
+    pub fn metadata(&self) -> FileMetadata {
+        let header = &self.header;
+
+        FileMetadata {
+            metadata_encrypted: header.encrypt_original_data,
+            name: header.name.plaintext().cloned(),
+            extension: header.extension.plaintext().cloned(),
+            source_os: header.source_os.plaintext().copied(),
+            create_time: header.create_time.plaintext().copied(),
+            modify_time: header.modify_time.plaintext().copied(),
+            access_time: header.access_time.plaintext().copied(),
+        }
     }
     
     /// Verifies checksum for the `boxfile` by generating new checksum for current data and
