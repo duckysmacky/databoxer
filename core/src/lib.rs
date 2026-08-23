@@ -15,8 +15,8 @@ pub mod options;
 pub mod error;
 pub mod io;
 
-mod os;
-mod hex;
+pub mod os;
+pub mod hex;
 
 /// Encrypts the file at the given path. Extra options can be provided to control the process.
 ///
