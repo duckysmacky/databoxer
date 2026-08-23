@@ -1,0 +1,3 @@
+- refactor cli tests to be all ran in separate environments to avoid multi-threaded conflict
+    - add support to specify the file paths for program (config, profiles, etc.)
+- refactor ci/cd to run as matrix intead of multiple per-os tests

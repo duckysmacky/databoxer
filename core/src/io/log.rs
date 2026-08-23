@@ -1,6 +1,5 @@
 use std::fmt;
-use std::sync::{Arc, Mutex};
-use lazy_static::lazy_static;
+use std::sync::OnceLock;
 
 #[derive(PartialEq)]
 pub enum LogType {
@@ -14,7 +13,7 @@ pub enum LogType {
 }
 
 impl LogType {
-    pub fn icon<'a>(&self) -> &'a str {
+    pub fn icon(&self) -> &'static str {
         match self {
             LogType::INFO => "i",
             LogType::STATUS => "*",
@@ -27,99 +26,45 @@ impl LogType {
     }
 }
 
-/// Modes which the `Logger` can use, controlling how much gets printed
-pub enum LoggerMode {
-    QUIET,
-    NORMAL,
-    VERBOSE,
+/// Implemented by whichever frontend embeds this crate (CLI, GUI, ...) to receive log/output
+/// messages
+pub trait LogSink: Send + Sync {
+    fn log(&self, log_type: LogType, message: fmt::Arguments);
+    fn output(&self, list: bool, data: fmt::Arguments);
 }
 
-/// Logger is responsible for the console logging, having three main modes: quiet, normal and
-/// verbose, each displaying different levels of information: none, only needed and everything
-/// respectively. Also has a debug side-mode which outputs debug information
-pub struct Logger {
-    debug: bool,
-    mode: LoggerMode,
+pub static LOG_SINK: OnceLock<Box<dyn LogSink>> = OnceLock::new();
+
+/// Registers the log sink used by `log!`/`output!`. Should be called once during startup
+pub fn set_log_sink(sink: Box<dyn LogSink>) {
+    LOG_SINK.set(sink).ok();
 }
 
-impl Logger {
-    fn new() -> Self {
-        Logger {
-            debug: false,
-            mode: LoggerMode::NORMAL,
-        }
-    }
-
-    /// Uses the log type and own set mode to determine whether the message should be logged and
-    /// outputs it to the `stdout` or `stderr` respectively
-    pub fn log(&self, log_type: LogType, message: fmt::Arguments<'_>) {
-        use LogType::*;
-
-        if self.debug && log_type == DEBUG {
-            println!("[{}] {}", log_type.icon(), message);
-            return;
-        }
-
-        match self.mode {
-            LoggerMode::QUIET => {
-                return;
-            },
-            LoggerMode::NORMAL => {
-                match log_type {
-                    ERROR | WARN => eprintln!("[{}] {}", log_type.icon(), message),
-                    SUCCESS | STATUS => println!("[{}] {}", log_type.icon(), message),
-                    _ => return
-                }
-            },
-            LoggerMode::VERBOSE => {
-                match log_type {
-                    ERROR | WARN => eprintln!("[{}] {}", log_type.icon(), message),
-                    _ => println!("[{}] {}", log_type.icon(), message)
-                }
-            },
-        }
-    }
-
-    /// Outputs plain data to the `stdout` based on the logger type. If set to quite mode, will
-    /// output a clean, decoration-free string, else will format it. `true` or `false` should be
-    /// provided as the first argument to imply that the data provided should be outputted as a
-    /// list or not
-    pub fn output(&self, list: bool, data: fmt::Arguments<'_>) {
-        match self.mode {
-            LoggerMode::QUIET => {
-                println!("{}", data);
-            },
-            _ => {
-                if list {
-                    println!(" - {}", data);
-                } else {
-                    println!("\t{}", data);
-                }
-            }
-        }
-    }
-}
-
-lazy_static! {
-    pub static ref LOGGER: Arc<Mutex<Logger>> = Arc::new(Mutex::new(Logger::new()));
-}
-
-/// Sets whether debug-level messages should be printed
-pub fn set_debug(enabled: bool) {
-    LOGGER.lock().unwrap().debug = enabled;
-}
-
-/// Sets the logger's verbosity mode
-pub fn set_mode(mode: LoggerMode) {
-    LOGGER.lock().unwrap().mode = mode;
-}
-
-/// Macro used for logging messages throughout the program. Acts like a wrapper above the shared
-/// `Logger`, formatting the message based on the log type and the logger's current mode
+/// Macro used for logging messages throughout the program. Dispatches to the registered
+/// `LogSink`, or does nothing if none has been registered yet
 #[macro_export]
 macro_rules! log {
     ($log_type:ident, $($arg:tt)*) => {{
         use $crate::io::log::{self, LogType};
-        log::LOGGER.lock().unwrap().log(LogType::$log_type, format_args!($($arg)*))
-    }};
+        if let Some(sink) = log::LOG_SINK.get() {
+            sink.log(LogType::$log_type, format_args!($($arg)*));
+        }}
+    };
+}
+
+/// Macro used for better data output. Acts like a wrapper above print! in order to produce a
+/// more suitable output based on the log sink's mode (cleaner and simpler output when in quiet
+/// mode). Add the `list` keyword to suggest that the data provided should be outputted as a list
+#[macro_export]
+macro_rules! output {
+    (list $($args:tt)*) => {
+        if let Some(sink) = $crate::io::log::LOG_SINK.get() {
+            sink.output(true, format_args!($($args)*));
+        }
+    };
+    ($($args:tt)*) => {
+        if let Some(sink) = $crate::io::log::LOG_SINK.get() {
+            sink.output(false, format_args!($($args)*));
+        }
+    };
 }

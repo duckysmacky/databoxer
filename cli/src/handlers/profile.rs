@@ -3,7 +3,7 @@
 use clap::ArgMatches;
 use databoxer_core::error;
 use databoxer_core::{options, log};
-use crate::output;
+use databoxer_core::output;
 
 /// Handles the `databoxer profile create` subcommand. Returns an exit code indicating the status of
 /// the operation (0 for success, non-zero for errors).

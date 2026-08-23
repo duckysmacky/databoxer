@@ -1,41 +1,88 @@
-//! Contains logic for configuring the shared core logger based on CLI arguments, and the
-//! `output!` macro for structured plain-data output
+//! CLI implementation of `databoxer_core::io::log::LogSink`
 
+use std::fmt;
 use clap::ArgMatches;
-use databoxer_core::io::log::{self, LoggerMode};
+use databoxer_core::io::log::{LogSink, LogType};
 
-/// Initiates and configures the shared logger to be of one the modes based on the command
-/// arguments to be later used for CLI logging
-pub fn configure_logger(args: &ArgMatches) {
-    log::set_debug(args.get_flag("DEBUG"));
-    log::set_mode({
-        if args.get_flag("QUIET") {
-            LoggerMode::QUIET
-        } else if args.get_flag("VERBOSE") {
-            LoggerMode::VERBOSE
-        } else {
-            LoggerMode::NORMAL
-        }
-    });
+/// Modes which `CliLogSink` can use, controlling how much gets printed
+pub enum LoggerMode {
+    QUIET,
+    NORMAL,
+    VERBOSE,
 }
 
-/// Macro used for better data output. Acts like a wrapper above print! in order to produce a
-/// more suitable output based on the logger mode (cleaner and simpler output when in quiet mode).
-/// Add the `list` keyword to suggest that the data provided should be outputted as a list
-#[macro_export]
-macro_rules! output {
-    (list $($args:tt)*) => {
-        {
-            use databoxer_core::io::log::LOGGER;
-            let logger = LOGGER.lock().unwrap();
-            logger.output(true, format_args!($($args)*));
+/// Responsible for the console logging, having three main modes: quiet, normal and verbose,
+/// each displaying different levels of information: none, only needed and everything
+/// respectively. Also has a debug side-mode which outputs debug information
+pub struct CliLogSink {
+    debug: bool,
+    mode: LoggerMode,
+}
+
+impl CliLogSink {
+    pub fn new(args: &ArgMatches) -> Self {
+        CliLogSink {
+            debug: args.get_flag("DEBUG"),
+            mode: {
+                if args.get_flag("QUIET") {
+                    LoggerMode::QUIET
+                } else if args.get_flag("VERBOSE") {
+                    LoggerMode::VERBOSE
+                } else {
+                    LoggerMode::NORMAL
+                }
+            },
         }
-    };
-    ($($args:tt)*) => {
-        {
-            use databoxer_core::io::log::LOGGER;
-            let logger = LOGGER.lock().unwrap();
-            logger.output(false, format_args!($($args)*));
+    }
+}
+
+impl LogSink for CliLogSink {
+    /// Uses the log type and own set mode to determine whether the message should be logged and
+    /// outputs it to the `stdout` or `stderr` respectively
+    fn log(&self, log_type: LogType, message: fmt::Arguments<'_>) {
+        use LogType::*;
+
+        if self.debug && log_type == DEBUG {
+            println!("[{}] {}", log_type.icon(), message);
+            return;
         }
-    };
+
+        match self.mode {
+            LoggerMode::QUIET => {
+                return;
+            },
+            LoggerMode::NORMAL => {
+                match log_type {
+                    ERROR | WARN => eprintln!("[{}] {}", log_type.icon(), message),
+                    SUCCESS | STATUS => println!("[{}] {}", log_type.icon(), message),
+                    _ => return
+                }
+            },
+            LoggerMode::VERBOSE => {
+                match log_type {
+                    ERROR | WARN => eprintln!("[{}] {}", log_type.icon(), message),
+                    _ => println!("[{}] {}", log_type.icon(), message)
+                }
+            },
+        }
+    }
+
+    /// Outputs plain data to the `stdout` based on the logger type. If set to quite mode, will
+    /// output a clean, decoration-free string, else will format it. `true` or `false` should be
+    /// provided as the first argument to imply that the data provided should be outputted as a
+    /// list or not
+    fn output(&self, list: bool, data: fmt::Arguments<'_>) {
+        match self.mode {
+            LoggerMode::QUIET => {
+                println!("{}", data);
+            },
+            _ => {
+                if list {
+                    println!(" - {}", data);
+                } else {
+                    println!("\t{}", data);
+                }
+            }
+        }
+    }
 }

@@ -13,7 +13,7 @@ mod path;
 pub fn run() -> i32 {
     let global_args = &command::get_command().get_matches();
 
-    io::log::configure_logger(&global_args);
+    databoxer_core::io::log::set_log_sink(Box::new(io::log::CliLogSink::new(global_args)));
 
     /* BOX */
     if let Some(args) = global_args.subcommand_matches("box") {
