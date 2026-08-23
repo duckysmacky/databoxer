@@ -3,7 +3,7 @@
 use clap::ArgMatches;
 use databoxer_core::error;
 use databoxer_core::{options, log};
-use databoxer_core::output;
+use crate::output;
 
 /// Handles the `databoxer profile create` subcommand. Returns an exit code indicating the status of
 /// the operation (0 for success, non-zero for errors).
@@ -16,7 +16,7 @@ pub fn handle_profile_create(args: &ArgMatches) -> i32 {
     let mut exit_code = 0;
     
     match databoxer_core::create_profile(name, options) {
-        Ok(_) => log!(SUCCESS, "Successfully created new profile '{}'", name),
+        Ok(_) => output!(SUCCESS, "Successfully created new profile '{}'", name),
         Err(err) => {
             log!(ERROR, "Unable to create a new profile named '{}' ({})", name, err.name());
             exit_code = err.exit_code() as i32;
@@ -41,7 +41,7 @@ pub fn handle_profile_delete(args: &ArgMatches) -> i32 {
     let mut exit_code = 0;
     
     match databoxer_core::delete_profile(name, options) {
-        Ok(_) => log!(SUCCESS, "Successfully deleted profile '{}'", name),
+        Ok(_) => output!(SUCCESS, "Successfully deleted profile '{}'", name),
         Err(err) => {
             log!(ERROR, "Unable to delete profile '{}' ({})", name, err.name());
             exit_code = err.exit_code() as i32;
@@ -66,7 +66,7 @@ pub fn handle_profile_set(args: &ArgMatches) -> i32 {
     let mut exit_code = 0;
     
     match databoxer_core::select_profile(name, options) {
-        Ok(_) => log!(SUCCESS, "Successfully set current profile to '{}'", name),
+        Ok(_) => output!(SUCCESS, "Successfully set current profile to '{}'", name),
         Err(err) => {
             log!(ERROR, "Unable to switch to profile '{}'", name);
             exit_code = err.exit_code() as i32;
@@ -85,8 +85,8 @@ pub fn handle_profile_set(args: &ArgMatches) -> i32 {
 pub fn handle_profile_get(_args: &ArgMatches) -> i32 {
     match databoxer_core::get_profile() {
         Ok(name) => {
-            log!(SUCCESS, "Currently selected profile:");
-            output!("{}", name);
+            output!(SUCCESS, "Currently selected profile:");
+            output!(DATA, "{}", name);
             
             0
         },
@@ -108,18 +108,18 @@ pub fn handle_profile_list(_args: &ArgMatches) -> i32 {
             let count = profiles.len();
 
             if count == 0 {
-                log!(SUCCESS, "No profiles found");
+                output!(SUCCESS, "No profiles found");
                 log!(WARN, "New profile can be created with 'databoxer profile new'");
             } else {
                 if count > 1 {
-                    log!(SUCCESS, "There are {} profiles found:", count);
+                    output!(SUCCESS, "There are {} profiles found:", count);
                 }
                 else {
-                    log!(SUCCESS, "There is {} profile found:", count);
+                    output!(SUCCESS, "There is {} profile found:", count);
                 }
 
                 for name in profiles {
-                    output!(list "{}", name);
+                    output!(DATA, "{}", name);
                 }
             }
             0

@@ -8,6 +8,7 @@ use crate::handlers;
 use crate::path;
 use databoxer_core::error;
 use databoxer_core::{options, log};
+use crate::output;
 
 /// Handles the `databoxer unbox` subcommand. Returns a tuple containing:
 /// - The total number of files processed
@@ -43,10 +44,10 @@ pub fn handle_unbox(args: &ArgMatches) -> (u32, u32, i32) {
             false => path.file_name().unwrap_or(OsStr::new("<unknown file name>")).to_os_string()
         };
 
-        log!(STATUS, "Decrypting {:?}...", file_name);
+        output!(STATUS, "Decrypting {:?}...", file_name);
         match databoxer_core::decrypt(path.as_path(), &mut options) {
             Ok(_) => {
-                log!(SUCCESS, "Successfully decrypted {:?}", file_name);
+                output!(SUCCESS, "Successfully decrypted {:?}", file_name);
                 successful_files += 1;
             },
             Err(err) => {

@@ -1,7 +1,6 @@
 //! Contains everything related to the CLI wrapper around the Databoxer API
 
 use std::time::Instant;
-use databoxer_core::log;
 
 pub mod io;
 
@@ -12,8 +11,17 @@ mod path;
 /// Runs the CLI application, handling subcommands and their arguments. Returns an exit code.
 pub fn run() -> i32 {
     let global_args = &command::get_command().get_matches();
+    
+    let debug_mode = global_args.get_flag("DEBUG");
+    let logger_mode = if global_args.get_flag("QUIET") {
+        io::log::LoggerMode::QUIET
+    } else if global_args.get_flag("VERBOSE") {
+        io::log::LoggerMode::VERBOSE
+    } else {
+        io::log::LoggerMode::NORMAL
+    };
 
-    databoxer_core::io::log::set_log_sink(Box::new(io::log::CliLogSink::new(global_args)));
+    databoxer_core::io::log::set_logger(Box::new(io::log::CliLogger::new(debug_mode, logger_mode)));
 
     /* BOX */
     if let Some(args) = global_args.subcommand_matches("box") {
@@ -21,8 +29,8 @@ pub fn run() -> i32 {
         let (total, successful, code) = handlers::handle_box(args);
 
         let duration = start_time.elapsed();
-        log!(STATUS, "[{}/{}] files encrypted", successful, total);
-        log!(STATUS, "Total time taken: {:.2?}", duration);
+        output!(SUCCESS, "[{}/{}] files encrypted", successful, total);
+        output!(SUCCESS, "Total time taken: {:.2?}", duration);
 
         return code;
     }
@@ -33,8 +41,8 @@ pub fn run() -> i32 {
         let (total, successful, code) = handlers::handle_unbox(args);
 
         let duration = start_time.elapsed();
-        log!(STATUS, "[{}/{}] files decrypted", successful, total);
-        log!(STATUS, "Total time taken: {:.2?}", duration);
+        output!(SUCCESS, "[{}/{}] files decrypted", successful, total);
+        output!(SUCCESS, "Total time taken: {:.2?}", duration);
 
         return code;
     }

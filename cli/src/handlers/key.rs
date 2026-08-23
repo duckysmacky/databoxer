@@ -5,7 +5,7 @@ use std::io::Read;
 use clap::ArgMatches;
 use databoxer_core::error;
 use databoxer_core::{options, log};
-use databoxer_core::output;
+use crate::output;
 
 /// Handles the `databoxer key new` subcommand. Returns an exit code indicating the status of the
 /// operation (0 for success, non-zero for errors).
@@ -16,7 +16,7 @@ pub fn handle_key_new(args: &ArgMatches) -> i32 {
     let mut exit_code = 0;
     
     match databoxer_core::new_key(options) {
-        Ok(_) => log!(SUCCESS, "Successfully generated new encryption key for the current profile"),
+        Ok(_) => output!(SUCCESS, "Successfully generated new encryption key for the current profile"),
         Err(err) => {
             log!(ERROR, "Unable to generate a new encryption key ({})", err.name());
             exit_code = err.exit_code() as i32;
@@ -42,8 +42,8 @@ pub fn handle_key_get(args: &ArgMatches) -> i32 {
     match databoxer_core::get_key(options) {
         Ok(key) => {
             // TODO: add current profile name
-            log!(SUCCESS, "Encryption key for the current profile:");
-            output!("{}", key);
+            output!(SUCCESS, "Encryption key for the current profile:");
+            output!(DATA, "{}", key);
         }
         Err(err) => {
             log!(ERROR, "Unable to get an encryption key for the current profile ({})", err.name());
@@ -78,7 +78,7 @@ pub fn handle_key_set<'a>(args: &ArgMatches) -> i32 {
     let mut exit_code = 0;
     
     match databoxer_core::set_key(&new_key, options) {
-        Ok(_) => log!(SUCCESS, "Successfully set a new encryption key for the current profile"),
+        Ok(_) => output!(SUCCESS, "Successfully set a new encryption key for the current profile"),
         Err(err) => {
             log!(ERROR, "Unable to set an encryption key for the current profile ({})", err.name());
             exit_code = err.exit_code() as i32;

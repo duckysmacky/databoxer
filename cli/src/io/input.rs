@@ -1,6 +1,7 @@
 use std::io::{self, BufRead, Write};
 use databoxer_core::io::input::InputPrompter;
-use databoxer_core::io::log::LogType;
+
+const INPUT_ICON: &str = "?";
 
 /// CLI implementation of `InputPrompter`
 pub struct CliInputPrompter;
@@ -8,7 +9,7 @@ pub struct CliInputPrompter;
 impl InputPrompter for CliInputPrompter {
     fn prompt_line(&self, message: &str) -> io::Result<String> {
         let mut stdout = io::stdout().lock();
-        write!(stdout, "[{}] {}: ", LogType::INPUT.icon(), message)?;
+        write!(stdout, "[{}] {}: ", INPUT_ICON, message)?;
 
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
@@ -18,7 +19,7 @@ impl InputPrompter for CliInputPrompter {
 
     fn prompt_lines(&self, message: &str) -> io::Result<Vec<String>> {
         let mut stdout = io::stdout().lock();
-        writeln!(stdout, "[{}] {} (blank line to finish):", LogType::INPUT.icon(), message)?;
+        writeln!(stdout, "[{}] {} (blank line to finish):", INPUT_ICON, message)?;
 
         let stdin = io::stdin();
         let mut lines = Vec::new();
@@ -35,7 +36,7 @@ impl InputPrompter for CliInputPrompter {
 
     fn prompt_hidden(&self, message: &str) -> io::Result<String> {
         let mut stdout = io::stdout().lock();
-        write!(stdout, "[{}] {}: ", LogType::INPUT.icon(), message)?;
+        write!(stdout, "[{}] {}: ", INPUT_ICON, message)?;
         read_hidden()
     }
 }

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::path;
 use databoxer_core::error;
 use databoxer_core::{options, log};
-use databoxer_core::output;
+use crate::output;
 
 /// Handles the `databoxer info` subcommand. Returns an exit code indicating the status of the 
 /// operation (0 for success, non-zero for errors).
@@ -26,13 +26,13 @@ pub fn handle_info(args: &ArgMatches) -> i32 {
 
     let mut exit_code = 0;
     
-    log!(STATUS, "Retrieving information about '{}'...", file_path.display());
+    output!(STATUS, "Retrieving information about '{}'...", file_path.display());
     match databoxer_core::get_info(&file_path, options) {
         Ok(info_lines) => {
-            log!(SUCCESS, "Displaying information about '{}':", file_path.display());
+            output!(SUCCESS, "Displaying information about '{}':", file_path.display());
             
             for line in info_lines {
-                output!(list "{}", line);
+                output!(DATA, "{}", line);
             }
         }
         Err(err) => {
