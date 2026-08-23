@@ -1,7 +1,7 @@
 //! Contains core logic for key manipulation subcommands
 
 use crate::{log, new_err, Key};
-use crate::{prompt, data::keys, encryption::cipher};
+use crate::{data::keys, encryption::cipher, io::input};
 use crate::hex;
 
 pub fn new(
@@ -11,7 +11,7 @@ pub fn new(
     
     let key = cipher::generate_key();
     let password = match password {
-        None => prompt::prompt_password()?,
+        None => input::prompt_password()?,
         Some(p) => p.to_string()
     };
     
@@ -26,7 +26,7 @@ pub fn get(
     log!(INFO, "Retrieving the encryption key from the current profile");
 
     let password = match password {
-        None => prompt::prompt_password()?,
+        None => input::prompt_password()?,
         Some(p) => p.to_string()
     };
     let key = keys::get_key(&password)?;
@@ -49,7 +49,7 @@ pub fn set(
     }
     let new_key = Key::try_from(&key_bytes[..32]).unwrap();
     let password = match password {
-        None => prompt::prompt_password()?,
+        None => input::prompt_password()?,
         Some(p) => p.to_string()
     };
     

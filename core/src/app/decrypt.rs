@@ -2,9 +2,7 @@ use std::path::{Path, PathBuf};
 use std::collections::VecDeque;
 use std::fs;
 use crate::data::boxfile::Boxfile;
-use crate::{data, prompt};
-use crate::{log, new_err};
-use crate::io;
+use crate::{data, io::{fs as io_fs, input}, log, new_err};
 
 /// Decryption the file at provided path using current profile's key. Password is required to
 /// verify and get access to current profile. Additional options can be supplied to change the
@@ -20,7 +18,7 @@ pub fn decrypt(
     let profile = profiles.get_current_profile()?;
     
     let password = match password {
-        None => prompt::prompt_password()?,
+        None => input::prompt_password()?,
         Some(p) => p.to_string()
     };
 
@@ -95,7 +93,7 @@ pub fn decrypt(
         }
     };
     
-    io::write_bytes(&output_path, &file_data, true).map_err(|e| new_err!(IOError: Write, output_path.to_path_buf(); e))?;
+    io_fs::write_bytes(&output_path, &file_data, true).map_err(|e| new_err!(IOError: Write, output_path.to_path_buf(); e))?;
     fs::remove_file(&input_path).map_err(|e| new_err!(IOError: Delete, input_path.to_path_buf(); e))?;
     
     profile.remove_associated_file(&input_path);

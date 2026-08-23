@@ -2,13 +2,13 @@
 //! `output!` macro for structured plain-data output
 
 use clap::ArgMatches;
-use databoxer_core::logs::{self, LoggerMode};
+use databoxer_core::io::log::{self, LoggerMode};
 
 /// Initiates and configures the shared logger to be of one the modes based on the command
 /// arguments to be later used for CLI logging
 pub fn configure_logger(args: &ArgMatches) {
-    logs::set_debug(args.get_flag("DEBUG"));
-    logs::set_mode({
+    log::set_debug(args.get_flag("DEBUG"));
+    log::set_mode({
         if args.get_flag("QUIET") {
             LoggerMode::QUIET
         } else if args.get_flag("VERBOSE") {
@@ -26,14 +26,14 @@ pub fn configure_logger(args: &ArgMatches) {
 macro_rules! output {
     (list $($args:tt)*) => {
         {
-            use databoxer_core::logs::LOGGER;
+            use databoxer_core::io::log::LOGGER;
             let logger = LOGGER.lock().unwrap();
             logger.output(true, format_args!($($args)*));
         }
     };
     ($($args:tt)*) => {
         {
-            use databoxer_core::logs::LOGGER;
+            use databoxer_core::io::log::LOGGER;
             let logger = LOGGER.lock().unwrap();
             logger.output(false, format_args!($($args)*));
         }

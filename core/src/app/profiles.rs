@@ -1,6 +1,6 @@
 //! Contains core logic for profile manipulation subcommands
 
-use crate::{data, prompt};
+use crate::{data, io::input};
 use crate::data::profiles::Profile;
 use crate::{log, new_err};
 
@@ -12,7 +12,7 @@ pub fn create(
     
     let mut profiles = data::get_profiles()?;
     let password = match password {
-        None => prompt::prompt_password()?,
+        None => input::prompt_password()?,
         Some(p) => p.to_string()
     };
     
@@ -28,7 +28,7 @@ pub fn delete(
     
     let mut profiles = data::get_profiles()?;
     let password = match password {
-        None => prompt::prompt_password()?,
+        None => input::prompt_password()?,
         Some(p) => p.to_string()
     };
 
@@ -50,7 +50,7 @@ pub fn select(
     }
 
     let password = match password {
-        None => prompt::prompt_password()?,
+        None => input::prompt_password()?,
         Some(p) => p.to_string()
     };
     profiles.set_current(&password, profile_name)?;

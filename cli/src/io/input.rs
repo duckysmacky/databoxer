@@ -1,7 +1,7 @@
 use std::io::Write;
 use std::io;
-use databoxer_core::logs::LogType;
-use databoxer_core::prompt::PasswordPrompter;
+use databoxer_core::io::input::PasswordPrompter;
+use databoxer_core::io::log::LogType;
 
 pub fn prompt(prompt_text: &str) -> io::Result<String> {
     let mut stdout = io::stdout().lock();
@@ -14,7 +14,7 @@ pub fn prompt(prompt_text: &str) -> io::Result<String> {
     Ok(input.trim().to_string())
 }
 
-/// CLI implementation of `databoxer_core::prompt::PasswordPrompter`, prompting for a password
+/// CLI implementation of `databoxer_core::io::input::PasswordPrompter`, prompting for a password
 /// with hidden terminal input
 pub struct CliPasswordPrompter;
 

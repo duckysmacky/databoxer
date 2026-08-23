@@ -118,7 +118,8 @@ pub fn set_mode(mode: LoggerMode) {
 /// `Logger`, formatting the message based on the log type and the logger's current mode
 #[macro_export]
 macro_rules! log {
-    ($log_type:ident, $($arg:tt)*) => {
-        $crate::logs::LOGGER.lock().unwrap().log($crate::logs::LogType::$log_type, format_args!($($arg)*))
-    };
+    ($log_type:ident, $($arg:tt)*) => {{
+        use $crate::io::log::{self, LogType};
+        log::LOGGER.lock().unwrap().log(LogType::$log_type, format_args!($($arg)*))
+    }};
 }

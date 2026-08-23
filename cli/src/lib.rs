@@ -3,7 +3,6 @@
 use std::time::Instant;
 use databoxer_core::log;
 
-pub mod logger;
 pub mod io;
 
 mod handlers;
@@ -14,7 +13,7 @@ mod path;
 pub fn run() -> i32 {
     let global_args = &command::get_command().get_matches();
 
-    logger::configure_logger(&global_args);
+    io::log::configure_logger(&global_args);
 
     /* BOX */
     if let Some(args) = global_args.subcommand_matches("box") {

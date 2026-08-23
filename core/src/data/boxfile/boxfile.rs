@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 use std::path::Path;
 use std::iter;
 use crate::{log, new_err, Checksum, Key, Result};
-use crate::{hex, io};
+use crate::{hex, io::fs};
 use crate::encryption::cipher;
 use super::header::{BoxfileHeader, EncryptedField};
 use super::info;
@@ -54,7 +54,7 @@ impl Boxfile {
     /// Checksum is generated at the very end from the header and body content.
     pub fn new(file_path: &Path, generate_padding: bool, encrypt_header_data: bool) -> Result<Self> {
         log!(DEBUG, "Initializing boxfile from {:?}", file_path);
-        let file_data = io::read_bytes(&file_path).map_err(|e| new_err!(IOError: Read, file_path.to_path_buf(); e))?;
+        let file_data = fs::read_bytes(&file_path).map_err(|e| new_err!(IOError: Read, file_path.to_path_buf(); e))?;
         let mut padding_len = 0;
         let body: Box<[u8]> = match generate_padding {
             true => {
@@ -99,7 +99,7 @@ impl Boxfile {
             }
         }
 
-        let bytes = io::read_bytes(file_path).map_err(|e| new_err!(IOError: Read, file_path.to_path_buf(); e))?;
+        let bytes = fs::read_bytes(file_path).map_err(|e| new_err!(IOError: Read, file_path.to_path_buf(); e))?;
         if bytes.len() < 4 {
             return Err(new_err!(ParseError: Boxfile, file_path.into(); "File is too small to be parsed correctly"))
         }
@@ -160,7 +160,7 @@ impl Boxfile {
         let config = bincode::config::standard();
         let bytes = bincode::serde::encode_to_vec(&self, config)
             .map_err(|err| new_err!(ParseError: Encoding, err.to_string()))?;
-        io::write_bytes(path, &bytes, true).map_err(|e| new_err!(IOError: Write, path.to_path_buf(); e))?;
+        fs::write_bytes(path, &bytes, true).map_err(|e| new_err!(IOError: Write, path.to_path_buf(); e))?;
 
         Ok(())
     }

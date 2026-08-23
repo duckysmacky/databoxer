@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::collections::VecDeque;
 use std::fs;
 use crate::data::boxfile::Boxfile;
-use crate::{data, prompt};
+use crate::{data, io::input};
 use crate::{log, new_err};
 
 /// Encrypts the file at provided path using current profile's key. Password is required to verify
@@ -29,7 +29,7 @@ pub fn encrypt(
 
     let mut boxfile = Boxfile::new(input_path, generate_padding, encrypt_metadata)?;
     let password = match password {
-        None => prompt::prompt_password()?,
+        None => input::prompt_password()?,
         Some(p) => p.to_string()
     };
 

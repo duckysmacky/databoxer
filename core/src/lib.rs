@@ -12,13 +12,11 @@ pub mod app;
 pub mod data;
 pub mod encryption;
 pub mod options;
-pub mod logs;
 pub mod error;
-pub mod prompt;
+pub mod io;
 
 mod os;
 mod hex;
-mod io;
 
 /// Encrypts the file at the given path. Extra options can be provided to control the process.
 ///

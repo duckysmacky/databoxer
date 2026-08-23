@@ -12,7 +12,7 @@
 //! on the disk
 
 use super::auth;
-use crate::io::{read_file, write_file};
+use crate::io::fs::{read_file, write_file};
 use crate::encryption::cipher;
 use crate::{log, new_err, Key, Nonce, Result};
 use serde::{Deserialize, Serialize};
