@@ -5,9 +5,7 @@
 
 > A data encryption program, which focuses on speed, safety and user-friendliness
 
-![windows](https://img.shields.io/github/actions/workflow/status/duckysmacky/databoxer/windows.yml?label=Windows)
-![linux](https://img.shields.io/github/actions/workflow/status/duckysmacky/databoxer/macos.yml?label=macOS)
-![macos](https://img.shields.io/github/actions/workflow/status/duckysmacky/databoxer/linux.yml?label=Linux)
+![tests](https://img.shields.io/github/actions/workflow/status/duckysmacky/databoxer/test.yml?label=Tests)
 ![version](https://img.shields.io/crates/v/databoxer)
 ![donwloads](https://img.shields.io/crates/d/databoxer)
 
