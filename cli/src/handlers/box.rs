@@ -4,9 +4,9 @@ use clap::ArgMatches;
 use std::path::PathBuf;
 use std::collections::VecDeque;
 use std::ffi::OsStr;
+use crate::error::{self, Verdict, Policy};
 use crate::handlers;
 use crate::path;
-use databoxer_core::error;
 use databoxer_core::{options, log};
 use crate::output;
 
@@ -56,8 +56,8 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32, i32) {
             Err(err) => {
                 log!(ERROR, "Unable to encrypt '{}' ({})", file_name.to_string_lossy(), err.name());
                 exit_code = err.exit_code() as i32;
-                
-                if handle_error(err) {
+
+                if error::report(&err, Policy::Batch) == Verdict::Abort {
                     return (total_files, successful_files, exit_code);
                 }
             }
@@ -65,39 +65,4 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32, i32) {
     }
 
     (total_files, successful_files, exit_code)
-}
-
-/// Handles the error based on its type and logs appropriate messages. If the error is critical, it 
-/// returns 'true' to indicate that the process should exit immediately. Otherwise, it returns 
-/// 'false', which allows the process to continue or exit gracefully.
-fn handle_error(err: error::Error) -> bool {
-    log!(ERROR, "{}", err.message());
-    
-    if let Some(cause) = err.cause() {
-        log!(ERROR, "Caused by: {}", cause);
-    }
-    
-    match err.get_type() {
-        error::ErrorType::ProfileError(kind) => {
-            match kind {
-                error::ProfileErrorKind::AuthenticationFailed => {
-                    log!(WARN, "Please check your password and try again.");
-                    true
-                }
-                error::ProfileErrorKind::NotSelected => {
-                    log!(WARN, "Please select a profile using 'databoxer profile set <name>' command.");
-                    true
-                }
-                _ => true
-            }
-        }
-        error::ErrorType::InvalidData(kind) => {
-            match kind {
-                error::InvalidDataKind::InvalidFile(_) => false,
-                _ => true
-            }
-        }
-        error::ErrorType::IOError(_) => false,
-        _ => true,
-    }
 }

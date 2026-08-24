@@ -6,6 +6,7 @@ pub mod io;
 
 mod handlers;
 mod command;
+mod error;
 mod path;
 
 /// Runs the CLI application, handling subcommands and their arguments. Returns an exit code.

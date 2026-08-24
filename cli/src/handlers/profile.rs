@@ -1,7 +1,7 @@
 //! Handlers for the `databoxer profile` command and its subcommands
 
 use clap::ArgMatches;
-use databoxer_core::error;
+use crate::error::{self, Policy};
 use databoxer_core::{options, log};
 use crate::output;
 
@@ -21,9 +21,7 @@ pub fn handle_profile_create(args: &ArgMatches) -> i32 {
             log!(ERROR, "Unable to create a new profile named '{}' ({})", name, err.name());
             exit_code = err.exit_code() as i32;
 
-            if handle_error(err) {
-                return exit_code;
-            }
+            error::report(&err, Policy::Single);
         }
     }
     
@@ -46,9 +44,7 @@ pub fn handle_profile_delete(args: &ArgMatches) -> i32 {
             log!(ERROR, "Unable to delete profile '{}' ({})", name, err.name());
             exit_code = err.exit_code() as i32;
 
-            if handle_error(err) {
-                return exit_code;
-            }
+            error::report(&err, Policy::Single);
         }
     }
     
@@ -68,12 +64,10 @@ pub fn handle_profile_set(args: &ArgMatches) -> i32 {
     match databoxer_core::select_profile(name, options) {
         Ok(_) => output!(SUCCESS, "Successfully set current profile to '{}'", name),
         Err(err) => {
-            log!(ERROR, "Unable to switch to profile '{}'", name);
+            log!(ERROR, "Unable to switch to profile '{}' ({})", name, err.name());
             exit_code = err.exit_code() as i32;
 
-            if handle_error(err) {
-                return exit_code;
-            }
+            error::report(&err, Policy::Single);
         }
     }
     
@@ -93,8 +87,8 @@ pub fn handle_profile_get(_args: &ArgMatches) -> i32 {
         Err(err) => {
             log!(ERROR, "Unable to get currently selected profile ({})", err.name());
             let exit_code = err.exit_code() as i32;
-            
-            handle_error(err);
+
+            error::report(&err, Policy::Single);
             exit_code
         }
     }
@@ -127,37 +121,9 @@ pub fn handle_profile_list(_args: &ArgMatches) -> i32 {
         Err(err) => {
             log!(ERROR, "Unable to get a list of all profiles ({})", err.name());
             let exit_code = err.exit_code() as i32;
-            handle_error(err);
+
+            error::report(&err, Policy::Single);
             exit_code
         }
-    }
-    
-}
-
-/// Handles the error based on its type and logs appropriate messages. If the error is critical, it 
-/// returns 'true' to indicate that the process should exit immediately. Otherwise, it returns 
-/// 'false', which allows the process to continue or exit gracefully.
-fn handle_error(err: error::Error) -> bool {
-    log!(ERROR, "{}", err.message());
-
-    if let Some(cause) = err.cause() {
-        log!(ERROR, "Caused by: {}", cause);
-    }
-
-    match err.get_type() {
-        error::ErrorType::ProfileError(kind) => {
-            match kind {
-                error::ProfileErrorKind::AuthenticationFailed => {
-                    log!(WARN, "Please check your password and try again.");
-                    true
-                }
-                error::ProfileErrorKind::NotSelected => {
-                    log!(WARN, "Please select a profile using 'databoxer profile set <name>' command.");
-                    true
-                }
-                _ => true
-            }
-        }
-        _ => true,
     }
 }

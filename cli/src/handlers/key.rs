@@ -3,7 +3,7 @@
 use std::fs::File;
 use std::io::Read;
 use clap::ArgMatches;
-use databoxer_core::error;
+use crate::error::{self, Policy};
 use databoxer_core::{options, log};
 use crate::output;
 
@@ -20,10 +20,8 @@ pub fn handle_key_new(args: &ArgMatches) -> i32 {
         Err(err) => {
             log!(ERROR, "Unable to generate a new encryption key ({})", err.name());
             exit_code = err.exit_code() as i32;
-            
-            if handle_error(err) {
-                return exit_code;
-            }
+
+            error::report(&err, Policy::Single);
         }
     }
     
@@ -49,9 +47,7 @@ pub fn handle_key_get(args: &ArgMatches) -> i32 {
             log!(ERROR, "Unable to get an encryption key for the current profile ({})", err.name());
             exit_code = err.exit_code() as i32;
 
-            if handle_error(err) {
-                return exit_code;
-            }
+            error::report(&err, Policy::Single);
         }
     }
     
@@ -83,12 +79,10 @@ pub fn handle_key_set<'a>(args: &ArgMatches) -> i32 {
             log!(ERROR, "Unable to set an encryption key for the current profile ({})", err.name());
             exit_code = err.exit_code() as i32;
 
-            if handle_error(err) {
-                return exit_code;
-            }
+            error::report(&err, Policy::Single);
         }
     }
-    
+
     exit_code
 }
 
@@ -99,32 +93,4 @@ fn get_key_from_file<'a>(key_path: &String) -> std::io::Result<String> {
 
     String::from_utf8(buffer)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))
-}
-
-/// Handles the error based on its type and logs appropriate messages. If the error is critical, it 
-/// returns 'true' to indicate that the process should exit immediately. Otherwise, it returns 
-/// 'false', which allows the process to continue or exit gracefully.
-fn handle_error(err: error::Error) -> bool {
-    log!(ERROR, "{}", err.message());
-
-    if let Some(cause) = err.cause() {
-        log!(ERROR, "Caused by: {}", cause);
-    }
-
-    match err.get_type() {
-        error::ErrorType::ProfileError(kind) => {
-            match kind {
-                error::ProfileErrorKind::AuthenticationFailed => {
-                    log!(WARN, "Please check your password and try again.");
-                    true
-                }
-                error::ProfileErrorKind::NotSelected => {
-                    log!(WARN, "Please select a profile using 'databoxer profile set <name>' command.");
-                    true
-                }
-                _ => true
-            }
-        }
-        _ => true,
-    }
 }

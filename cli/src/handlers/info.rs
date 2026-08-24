@@ -2,8 +2,8 @@
 
 use clap::ArgMatches;
 use std::path::PathBuf;
+use crate::error::{self, Policy};
 use crate::path;
-use databoxer_core::error;
 use databoxer_core::{options, log};
 use crate::output;
 
@@ -39,39 +39,9 @@ pub fn handle_info(args: &ArgMatches) -> i32 {
             log!(ERROR, "Unable to get information about '{}' ({})", file_path.to_string_lossy(), err.name());
             exit_code = err.exit_code() as i32;
 
-            if handle_error(err) {
-                return exit_code;
-            }
+            error::report(&err, Policy::Single);
         }
     }
-    
+
     exit_code
-}
-
-/// Handles the error based on its type and logs appropriate messages. If the error is critical, it 
-/// returns 'true' to indicate that the process should exit immediately. Otherwise, it returns 
-/// 'false', which allows the process to continue or exit gracefully.
-fn handle_error(err: error::Error) -> bool {
-    log!(ERROR, "{}", err.message());
-
-    if let Some(cause) = err.cause() {
-        log!(ERROR, "Caused by: {}", cause);
-    }
-
-    match err.get_type() {
-        error::ErrorType::ProfileError(kind) => {
-            match kind {
-                error::ProfileErrorKind::AuthenticationFailed => {
-                    log!(WARN, "Please check your password and try again.");
-                    true
-                }
-                error::ProfileErrorKind::NotSelected => {
-                    log!(WARN, "Please select a profile using 'databoxer profile set <name>' command.");
-                    true
-                }
-                _ => true
-            }
-        }
-        _ => true,
-    }
 }
