@@ -1,10 +1,13 @@
 //! Contains a `DataboxerCommand` struct used to test the behavior of the CLI application. The
 //! returned Output should be used to determine if the test was successful or not
 
-use std::ffi::OsStr;
-use std::process::{Command, Output};
-use std::path::PathBuf;
-use crate::common::PASSWORD;
+use std::{
+    ffi::OsStr,
+    path::PathBuf,
+    process::{Command, Output},
+};
+
+use super::PASSWORD;
 
 /// Represents the `databoxer [arg]...` command. Acts like a wrapper for the `Command` type
 pub struct DataboxerCommand {

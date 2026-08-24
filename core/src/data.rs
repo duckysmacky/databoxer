@@ -1,16 +1,17 @@
 //! Contains everything related to outside data manipulations, filesystem and operating system
 //! interactions
 
-use crate::{log, Result};
-use profiles::ProfileData;
-use config::DataboxerConfig;
-use crate::os::data;
-
 pub mod boxfile;
-pub mod profiles;
-pub mod keys;
 pub mod config;
+pub mod keys;
+pub mod profiles;
 mod auth;
+
+use crate::{os::data, log, Result};
+use self::{
+    config::DataboxerConfig,
+    profiles::ProfileData,
+};
 
 /// Fetches the Databoxer profiles by importing it from the file on the disk. Will return an error in
 /// case of the operation failing

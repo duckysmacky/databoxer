@@ -1,11 +1,8 @@
 //! Contains helper functions for path manipulation
 
-use std::ffi::OsStr;
-use std::fs;
-use std::io;
-use std::path::{Path, PathBuf};
-use databoxer_core::data::boxfile::Boxfile;
-use databoxer_core::log;
+use std::{ffi::OsStr, path::{Path, PathBuf}, fs, io};
+
+use databoxer_core::{data::boxfile::Boxfile, log};
 
 /// Opens and parses provided path, returning a flattened list of all found paths. Verifies if the
 /// given paths exists. In case of a directory being provided returns all paths inside of it. Can

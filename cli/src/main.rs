@@ -1,12 +1,10 @@
 //! Databoxer entry point
 
-use std::process;
-use std::time::Instant;
+use std::{time::Instant, process};
 
 use clap::ArgMatches;
 
-use databoxer_cli::{command, io, handlers, error};
-use databoxer_cli::output;
+use databoxer_cli::{command, error, handlers, io, output};
 
 fn main() {
     let global_args = &command::get_command().get_matches();

@@ -1,6 +1,6 @@
 //! Contains hex helper functions
 
-use crate::{Result, new_err};
+use crate::{new_err, Result};
 
 /// Transforms and formats a byte array into a hex string
 /// (e.g. `[1, 40, 174, 16, 5, ...]` into `"0128AE1005..."`)

@@ -1,14 +1,19 @@
 //! Handler for the `databoxer info` command
 
-use clap::ArgMatches;
-use std::path::{Path, PathBuf};
-use std::time::SystemTime;
+use std::{
+    path::{Path, PathBuf},
+    time::SystemTime,
+};
+
 use chrono::{DateTime, Local};
-use crate::error::{self, Policy};
-use crate::path;
-use databoxer_core::data::boxfile::{Boxfile, FileMetadata};
-use databoxer_core::{log, Result};
-use crate::output;
+use clap::ArgMatches;
+
+use databoxer_core::{
+    data::boxfile::{Boxfile, FileMetadata},
+    log, Result,
+};
+
+use crate::{error::{self, Policy}, output, path};
 
 /// Handles the `databoxer info` subcommand. Returns an exit code indicating the status of the 
 /// operation (0 for success, non-zero for errors).

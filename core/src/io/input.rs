@@ -1,5 +1,6 @@
 use std::sync::OnceLock;
-use crate::{Result, new_err};
+
+use crate::{new_err, Result};
 
 /// Implemented by whichever frontend embeds this crate (CLI, GUI, ...) to supply ways of
 /// getting text input from the user

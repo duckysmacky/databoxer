@@ -1,18 +1,19 @@
 //! Contains implementation for the custom `boxfile` file format, it's header and
 //! additional information for parsing and serializing the custom file format.
 
+use std::{path::Path, time::SystemTime, iter};
+
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::path::Path;
-use std::iter;
-use std::time::SystemTime;
-use crate::{log, new_err, Checksum, Key, Result};
-use crate::{hex, io::fs};
-use crate::encryption::cipher;
-use crate::os::OS;
-use super::header::BoxfileHeader;
-use super::info;
+
+use crate::{
+    encryption::cipher,
+    io::fs,
+    os::OS,
+    Checksum, hex, Key, log, new_err, Result,
+};
+use super::{header::BoxfileHeader, info};
 
 /// The original file's information, as recovered from a `boxfile` header. Any field which was
 /// never recorded, or which is still encrypted, comes back as `None`

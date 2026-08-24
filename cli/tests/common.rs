@@ -1,11 +1,12 @@
-//! Contains common functions and constants for running tests.
-
-use std::{fs, io};
-use std::path::Path;
-use databoxer_core::data::{self, profiles::Profile};
-use databoxer_core::ErrorType;
-
+#[path = "common/command.rs"]
 pub mod command;
+
+use std::{path::Path, fs, io};
+
+use databoxer_core::{
+    data::{self, profiles::Profile},
+    ErrorType,
+};
 
 pub const PROFILE_NAME: &str = "common-test-profile";
 pub const PASSWORD: &str = "common-test-password";

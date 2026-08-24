@@ -2,8 +2,7 @@
 //! result type, error types and their implementations for Display and conversion from other errors.
 //! Consult every error's doc for more details
 
-use std::path::PathBuf;
-use std::fmt::{self, Display, Formatter};
+use std::{fmt::{self, Display, Formatter}, path::PathBuf};
 
 /// Custom result type which should be used throughout the codebase for consistency and better
 /// error handling
@@ -429,6 +428,7 @@ macro_rules! err_cmp {
     ($err:expr, $err_type:ident, $err_kind:ident) => {
         {
             use paste::paste;
+
             use $crate::error::ErrorType;
             if let ErrorType::$err_type(kind) = &$err.get_type() {
                 paste! {
@@ -447,6 +447,7 @@ macro_rules! err_cmp {
     ($err:expr, $err_type:ident, $err_kind:ident()) => {
         {
             use paste::paste;
+
             use $crate::error::ErrorType;
             if let ErrorType::$err_type(kind) = &$err.get_type() {
                 paste! {

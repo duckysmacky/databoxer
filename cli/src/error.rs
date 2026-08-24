@@ -4,8 +4,10 @@
 //! inspects a core error's type. Handlers decide *what* to do with the outcome, not how the error
 //! is presented
 
-use databoxer_core::error::{Error, ErrorType, InvalidDataKind, ProfileErrorKind};
-use databoxer_core::log;
+use databoxer_core::{
+    error::{Error, ErrorType, InvalidDataKind, ProfileErrorKind},
+    log,
+};
 
 /// Exit code used when the CLI itself refuses to start the requested work, rather than a core
 /// operation failing. Core failures carry their own, more specific codes

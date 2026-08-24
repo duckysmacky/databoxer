@@ -1,13 +1,12 @@
 //! Handlers for the `databoxer key` command and its subcommands
 
-use std::fs::File;
-use std::io::Read;
+use std::{fs::File, io::Read};
+
 use clap::ArgMatches;
-use crate::error::{self, Policy};
-use databoxer_core::data::keys;
-use databoxer_core::encryption::cipher;
-use databoxer_core::{hex, log, Result};
-use crate::output;
+
+use databoxer_core::{data::keys, encryption::cipher, hex, log, Result};
+
+use crate::{error::{self, Policy}, output};
 
 /// Handles the `databoxer key new` subcommand. Returns an exit code indicating the status of the
 /// operation (0 for success, non-zero for errors).

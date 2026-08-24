@@ -1,5 +1,4 @@
-use std::fmt;
-use std::sync::OnceLock;
+use std::{sync::OnceLock, fmt};
 
 #[derive(PartialEq)]
 pub enum LogType {

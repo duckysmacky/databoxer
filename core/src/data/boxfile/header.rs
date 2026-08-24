@@ -1,11 +1,13 @@
-use std::path::Path;
-use std::fs;
+use std::{path::Path, time::SystemTime, fs};
+
 use serde::{Deserialize, Serialize};
-use std::time::SystemTime;
-use crate::data::boxfile::info;
-use crate::os::OS;
-use crate::{log, new_err, Key, Nonce};
-use crate::encryption::cipher;
+
+use crate::{
+    data::boxfile::info,
+    encryption::cipher,
+    os::OS,
+    Key, log, new_err, Nonce,
+};
 
 /// The header for the `boxfile`, which contains extra information about the file. This
 /// includes a unique identifier (magic), length of the generated padding, the original

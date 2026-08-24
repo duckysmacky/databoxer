@@ -11,13 +11,16 @@
 //! which it belongs to. Password is also hashed automatically on creation and stored in that form
 //! on the disk
 
-use super::auth;
-use crate::io::fs::{read_file, write_file};
-use crate::encryption::cipher;
-use crate::{log, new_err, Key, Nonce, Result};
+use std::{path::{Path, PathBuf}, io};
+
 use serde::{Deserialize, Serialize};
-use std::io::{self};
-use std::path::{Path, PathBuf};
+
+use crate::{
+    io::fs::{read_file, write_file},
+    encryption::cipher,
+    Key, log, new_err, Nonce, Result,
+};
+use super::auth;
 
 /// Name of the file which stores all the profile data
 const PROFILES_FILE_NAME: &str = "profiles.json";
@@ -313,8 +316,8 @@ impl Profile {
 
 #[cfg(test)]
 mod tests {
-    use crate::os::data;
-    use crate::err_cmp;
+    use crate::{os::data, err_cmp};
+
     use super::*;
     
     /// Creates the `profiles.json` file in the program data directory and fills it with default

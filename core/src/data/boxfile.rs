@@ -1,8 +1,10 @@
 mod boxfile;
 mod header;
 
-pub use boxfile::{Boxfile, FileMetadata};
-pub use header::*;
+pub use {
+    boxfile::{Boxfile, FileMetadata},
+    header::*,
+};
 
 mod info {
     //! Constants for the header: current file format version and unique file

@@ -7,12 +7,15 @@
 //! Each configuration category is a separate struct (e.g.: `GeneralConfig`). Each field is public
 //! for accessing configuration fields
 
-use std::io;
+use std::{path::PathBuf, io};
+
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
-use crate::io::fs::{read_file, write_file};
-use crate::error::Result;
-use crate::{log, new_err};
+
+use crate::{
+    io::fs::{read_file, write_file},
+    error::Result,
+    log, new_err,
+};
 
 /// Name of the main configuration file
 const CONFIG_FILE_NAME: &str = "databoxer.toml";
@@ -94,6 +97,7 @@ impl DataboxerConfig {
 #[cfg(test)]
 mod tests {
     use crate::os::data;
+
     use super::*;
 
     #[test]

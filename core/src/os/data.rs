@@ -1,8 +1,8 @@
 //! Contains functions which rely on operating system with their functionality and return values
 //! depending on it
 
-use std::path::PathBuf;
-use std::{env, fs};
+use std::{path::PathBuf, env, fs};
+
 use crate::{new_err, Result};
 
 /// Returns the application data directory based on the OS. Used for storing profiles and other

@@ -1,6 +1,7 @@
 //! CLI implementation of `databoxer_core::io::log::Logger`
 
 use std::fmt;
+
 use databoxer_core::io::log::{Logger, LogType};
 
 /// Modes which `CliLogger` can use, controlling how much gets printed

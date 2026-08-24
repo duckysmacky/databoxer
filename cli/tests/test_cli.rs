@@ -1,12 +1,10 @@
 //! Tests to test how the CLI client performs with different flags and inputs
 
-use std::fs::File;
-use std::io::Write;
-use std::iter;
-use std::path::Path;
-use rand::Rng;
-
 mod common;
+
+use std::{fs::File, io::Write, path::Path, iter};
+
+use rand::Rng;
 
 /// Local test environment setup
 fn setup() {
@@ -33,7 +31,7 @@ fn generate_key() -> String {
 macro_rules! databoxer_cmd {
     ($cmd:expr) => {
         {
-            use common::command::{DataboxerCommand, print_output};
+            use crate::common::command::{DataboxerCommand, print_output};
             let command = DataboxerCommand::new($cmd, false);
             let output = command.execute();
             print_output(&output);
@@ -42,7 +40,7 @@ macro_rules! databoxer_cmd {
     };
     ($cmd:expr; $($args:expr),+) => {
         {
-            use common::command::{DataboxerCommand, print_output};
+            use crate::common::command::{DataboxerCommand, print_output};
             let mut command = DataboxerCommand::new($cmd, false);
             for arg in [$($args),*] {
                 command.arg(arg);
@@ -54,7 +52,7 @@ macro_rules! databoxer_cmd {
     };
     (p $cmd:expr) => {
         {
-            use common::command::{DataboxerCommand, print_output};
+            use crate::common::command::{DataboxerCommand, print_output};
             let command = DataboxerCommand::new($cmd, true);
             let output = command.execute();
             print_output(&output);
@@ -63,7 +61,7 @@ macro_rules! databoxer_cmd {
     };
     (p $cmd:expr; $($args:expr),+) => {
         {
-            use common::command::{DataboxerCommand, print_output};
+            use crate::common::command::{DataboxerCommand, print_output};
             let mut command = DataboxerCommand::new($cmd, true);
             for arg in [$($args),*] {
                 command.arg(arg);

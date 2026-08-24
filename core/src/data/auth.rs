@@ -1,9 +1,11 @@
 //! Contains functions related to user authentication and password
 
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use argon2::password_hash::rand_core::OsRng;
-use argon2::password_hash::{Salt, SaltString};
-use crate::{Result, new_err, Key};
+use argon2::{
+    password_hash::{rand_core::OsRng, Salt, SaltString},
+    Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
+};
+
+use crate::{Key, new_err, Result};
 
 /// Hashes the given password. Returns hashed password and key generated based on the password hash
 /// used to encrypt the stored encryption key
@@ -50,6 +52,7 @@ pub fn get_password_key(password_hash: &str, password: &str) -> Result<Key> {
 #[cfg(test)]
 mod tests {
     use crate::encryption::cipher;
+
     use super::*;
 
     #[test]

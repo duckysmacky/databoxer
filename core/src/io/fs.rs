@@ -1,8 +1,11 @@
 //! Contains helper functions for basic IO operation on files
 
-use std::path::Path;
-use std::fs::{self, File};
-use std::io::{Read, Result, Write};
+use std::{
+    fs::{self, File},
+    io::{Read, Result, Write},
+    path::Path,
+};
+
 use crate::log;
 
 /// Reads plain bytes from the specified file

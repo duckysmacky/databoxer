@@ -3,9 +3,11 @@
 //! Core operations are always given an explicit destination, so deciding what an encrypted or a
 //! restored file ends up being called belongs to the frontend
 
-use std::collections::VecDeque;
-use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::VecDeque,
+    path::{Path, PathBuf},
+};
+
 use databoxer_core::log;
 
 /// Extension given to every encrypted file
@@ -73,6 +75,8 @@ pub fn restored_path(input: &Path, name: Option<&str>, extension: Option<&str>) 
 
 #[cfg(test)]
 mod tests {
+    use std::ffi::OsStr;
+
     use super::*;
 
     #[test]

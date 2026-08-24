@@ -6,12 +6,14 @@
 //! performs no process of its own, leaving that to whichever frontend embeds it. It does own its
 //! logging and input prompting, which any frontend can configure.
 
-pub use error::{Error, ErrorType, Result};
-pub use encryption::cipher::{Checksum, Key, Nonce};
-
 pub mod data;
 pub mod encryption;
 pub mod error;
 pub mod hex;
 pub mod io;
 pub mod os;
+
+pub use {
+    encryption::cipher::{Checksum, Key, Nonce},
+    error::{Error, ErrorType, Result},
+};

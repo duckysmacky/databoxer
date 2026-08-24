@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-
 pub mod data;
+
+use serde::{Deserialize, Serialize};
 
 /// Enum representing one of the possible operating systems
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]

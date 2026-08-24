@@ -1,4 +1,5 @@
 use std::io::{self, BufRead, Write};
+
 use databoxer_core::io::input::InputPrompter;
 
 const INPUT_ICON: &str = "?";
@@ -43,11 +44,14 @@ impl InputPrompter for CliInputPrompter {
 
 #[cfg(unix)]
 fn read_hidden() -> io::Result<String> {
-    use std::mem;
-    use std::fs::File;
-    use std::os::fd::RawFd;
-    use std::os::unix::io::AsRawFd;
-    use libc::{termios, tcgetattr, tcsetattr, ECHO, TCSANOW, ECHONL};
+    use std::{
+        os::unix::io::AsRawFd,
+        fs::File,
+        mem,
+        os::fd::RawFd,
+    };
+
+    use libc::{tcgetattr, tcsetattr, termios, ECHO, ECHONL, TCSANOW};
 
     const CURSOR_UP: &str = "\x1b[1A";
     const ERASE_LINE: &str = "\x1b[2K";
@@ -83,7 +87,9 @@ fn read_hidden() -> io::Result<String> {
 
 #[cfg(windows)]
 fn read_hidden() -> io::Result<String> {
-    use windows_sys::Win32::System::Console::{GetConsoleMode, SetConsoleMode, GetStdHandle, STD_INPUT_HANDLE, ENABLE_ECHO_INPUT};
+    use windows_sys::Win32::System::Console::{
+        ENABLE_ECHO_INPUT, GetConsoleMode, GetStdHandle, STD_INPUT_HANDLE, SetConsoleMode,
+    };
 
     let handle = unsafe {
         GetStdHandle(STD_INPUT_HANDLE)

@@ -2,26 +2,34 @@
 //! actions. Each submodule in this module corresponds to the subcommand under the main databoxer
 //! command
 
-mod profile;
-mod key;
 mod r#box;
-mod unbox;
 mod info;
+mod key;
+mod profile;
+mod unbox;
+
+use std::{
+    collections::VecDeque,
+    ffi::{OsStr, OsString},
+    path::{Path, PathBuf},
+};
 
 use clap::ArgMatches;
-use std::collections::VecDeque;
-use std::ffi::{OsStr, OsString};
-use std::path::{Path, PathBuf};
+
+use databoxer_core::{
+    data::{self, profiles::ProfileData},
+    Key, Result,
+};
 
 use crate::path;
-use databoxer_core::data::{self, profiles::ProfileData};
-use databoxer_core::{Key, Result};
 
-pub use r#box::handle_box;
-pub use unbox::handle_unbox;
-pub use info::handle_info;
-pub use key::*;
-pub use profile::*;
+pub use {
+    info::handle_info,
+    key::*,
+    profile::*,
+    r#box::handle_box,
+    unbox::handle_unbox,
+};
 
 /// Converts from the passed arguments strings to vector of paths
 fn get_path_vec(args: &ArgMatches, arg_id: &str) -> Option<Vec<PathBuf>> {

@@ -1,10 +1,13 @@
 //! Handlers for the `databoxer profile` command and its subcommands
 
 use clap::ArgMatches;
-use crate::error::{self, Policy};
-use databoxer_core::data::{self, profiles::Profile};
-use databoxer_core::{log, Result};
-use crate::output;
+
+use databoxer_core::{
+    data::{self, profiles::Profile},
+    log, Result,
+};
+
+use crate::{error::{self, Policy}, output};
 
 /// Handles the `databoxer profile create` subcommand. Returns an exit code indicating the status of
 /// the operation (0 for success, non-zero for errors).

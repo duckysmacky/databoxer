@@ -1,14 +1,16 @@
 //! Handler for the the `databoxer box` command
 
+use std::{path::Path, fs};
+
 use clap::ArgMatches;
-use std::fs;
-use std::path::Path;
-use crate::error::{self, Verdict, Policy};
-use crate::handlers;
-use crate::naming::{self, OutputPaths};
-use databoxer_core::data::boxfile::Boxfile;
-use databoxer_core::{log, Key, Result};
-use crate::output;
+
+use databoxer_core::{data::boxfile::Boxfile, Key, log, Result};
+
+use crate::{
+    error::{self, Policy, Verdict},
+    naming::{self, OutputPaths},
+    handlers, output,
+};
 
 /// Handles the `databoxer box` subcommand. Returns a tuple containing:
 /// - The total number of files processed

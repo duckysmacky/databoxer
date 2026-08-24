@@ -1,8 +1,6 @@
 //! Contains wrapper functions above profiles to get and set current profile's key
 
-use crate::log;
-use crate::{Key, Result};
-use crate::data;
+use crate::{data, Key, log, Result};
 
 /// Gets the key for the current profile
 pub fn get_key(password: &str) -> Result<Key> {
