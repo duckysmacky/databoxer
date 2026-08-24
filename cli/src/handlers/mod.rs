@@ -9,7 +9,11 @@ mod unbox;
 mod info;
 
 use clap::ArgMatches;
-use std::path::PathBuf;
+use std::collections::VecDeque;
+use std::ffi::{OsStr, OsString};
+use std::path::{Path, PathBuf};
+
+use crate::path;
 
 pub use r#box::handle_box;
 pub use unbox::handle_unbox;
@@ -26,4 +30,27 @@ fn get_path_vec(args: &ArgMatches, arg_id: &str) -> Option<Vec<PathBuf>> {
         )
     }
     None
+}
+
+/// Expands the supplied `PATH` arguments into the flat list of files to work on, descending into
+/// directories and optionally their subdirectories
+fn resolve_inputs(args: &ArgMatches) -> Vec<PathBuf> {
+    let input_paths = get_path_vec(args, "PATH").expect("File path is required");
+    let recursive = args.get_flag("RECURSIVE");
+
+    path::parse_paths(input_paths, recursive)
+}
+
+/// Collects the supplied `OUTPUT` arguments into a queue, one output path per processed file
+fn get_output_paths(args: &ArgMatches) -> Option<VecDeque<PathBuf>> {
+    let paths = get_path_vec(args, "OUTPUT")?;
+    Some(VecDeque::from(paths))
+}
+
+/// Picks how a file is referred to in the program's output, honouring the `--show-full-path` flag
+fn display_name(args: &ArgMatches, path: &Path) -> OsString {
+    match args.get_flag("SHOW_FULL_PATH") {
+        true => path.as_os_str().to_os_string(),
+        false => path.file_name().unwrap_or(OsStr::new("<unknown file name>")).to_os_string()
+    }
 }
