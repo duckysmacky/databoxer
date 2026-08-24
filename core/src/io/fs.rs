@@ -46,6 +46,22 @@ pub fn write_bytes(path: &Path, bytes: &[u8], truncate: bool) -> Result<()> {
     Ok(())
 }
 
+/// Writes plain bytes to a file which must not already exist. Fails with `AlreadyExists` rather
+/// than destroying whatever is at the path
+pub fn write_new_bytes(path: &Path, bytes: &[u8]) -> Result<()> {
+    log!(DEBUG, "Writing bytes to a new file at '{}'", path.display());
+    let mut file = File::options()
+        .write(true)
+        .create_new(true)
+        .open(path)?;
+
+    file.write_all(bytes)?;
+    file.flush()?;
+
+    log!(DEBUG, "Wrote {} bytes", bytes.len());
+    Ok(())
+}
+
 /// Writes string to the specified file. Creates a new one if already doesn't exist
 pub fn write_file(path: &Path, contents: &str, truncate: bool) -> Result<()> {
     log!(DEBUG, "Writing to '{}'", path.display());

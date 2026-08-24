@@ -71,6 +71,13 @@ impl Boxfile {
     /// Checksum is generated at the very end from the header and body content.
     pub fn new(file_path: &Path, generate_padding: bool, encrypt_header_data: bool) -> Result<Self> {
         log!(DEBUG, "Initializing boxfile from {:?}", file_path);
+
+        if let Some(extension) = file_path.extension() {
+            if extension == "box" {
+                return Err(new_err!(InvalidData: InvalidFile, file_path.to_path_buf(); "File is already encrypted (has a .box extension)"));
+            }
+        }
+
         let file_data = fs::read_bytes(&file_path).map_err(|e| new_err!(IOError: Read, file_path.to_path_buf(); e))?;
         let mut padding_len = 0;
         let body: Box<[u8]> = match generate_padding {
@@ -140,12 +147,6 @@ impl Boxfile {
         Ok(boxfile)
     }
 
-    /// Returns the information about the file contained within the `boxfile`: original file name,
-    /// and extension
-    pub fn file_info(&self) -> (Option<&String>, Option<&String>) {
-        (self.header.name.plaintext(), self.header.extension.plaintext())
-    }
-
     /// Returns everything the header records about the original file. Fields which were never
     /// recorded, or which are still encrypted, come back as `None` - decrypt the boxfile first to
     /// read the metadata of a file which was boxed with metadata encryption enabled
@@ -179,14 +180,26 @@ impl Boxfile {
         Ok(checksum == self.checksum)
     }
 
-    /// Serializes self and writes to specified file
+    /// Serializes self and writes it to the specified file. The destination must not already
+    /// exist, so that boxing never destroys a file which is already there
     pub fn save_to(&self, path: &Path) -> Result<()> {
         log!(DEBUG, "Serializing and saving boxfile to {:?}", path);
 
         let config = bincode::config::standard();
         let bytes = bincode::serde::encode_to_vec(&self, config)
             .map_err(|err| new_err!(ParseError: Encoding, err.to_string()))?;
-        fs::write_bytes(path, &bytes, true).map_err(|e| new_err!(IOError: Write, path.to_path_buf(); e))?;
+        fs::write_new_bytes(path, &bytes).map_err(|e| new_err!(IOError: Write, path.to_path_buf(); e))?;
+
+        Ok(())
+    }
+
+    /// Writes the original file's contents to the specified path. The destination must not already
+    /// exist, so that restoring a file never destroys one which is already there
+    pub fn restore_to(&self, path: &Path) -> Result<()> {
+        log!(DEBUG, "Restoring original file contents to {:?}", path);
+
+        let file_data = self.file_data()?;
+        fs::write_new_bytes(path, &file_data).map_err(|e| new_err!(IOError: Write, path.to_path_buf(); e))?;
 
         Ok(())
     }

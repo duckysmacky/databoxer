@@ -165,6 +165,8 @@ pub fn get_command() -> Command {
         )
         /* PROFILE SUBCOMMAND */
         .subcommand(Command::new("profile")
+            .subcommand_required(true)
+            .arg_required_else_help(true)
             .about("Control custom profiles")
             /* CREATE PROFILE SUBCOMMAND */
             .subcommand(Command::new("new")
@@ -223,6 +225,8 @@ pub fn get_command() -> Command {
         )
         /* KEY SUBCOMMAND */
         .subcommand(Command::new("key")
+            .subcommand_required(true)
+            .arg_required_else_help(true)
             .about("Control profile\'s encryption key")
             /* GENERATE KEY SUBCOMMAND */
             .subcommand(Command::new("new")

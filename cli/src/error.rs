@@ -7,6 +7,10 @@
 use databoxer_core::error::{Error, ErrorType, InvalidDataKind, ProfileErrorKind};
 use databoxer_core::log;
 
+/// Exit code used when the CLI itself refuses to start the requested work, rather than a core
+/// operation failing. Core failures carry their own, more specific codes
+pub const CLI_FAILURE: i32 = 1;
+
 /// Whether the command should stop after an error, or carry on with the work it has left
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Verdict {

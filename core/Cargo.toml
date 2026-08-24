@@ -20,6 +20,4 @@ sha2 = { workspace = true }
 argon2 = { workspace = true }
 
 # utility
-uuid = { workspace = true }
 paste = { workspace = true }
-chrono = { workspace = true }

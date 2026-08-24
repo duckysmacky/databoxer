@@ -92,17 +92,46 @@ impl ProfileData {
         &self.profiles
     }
 
-    /// Sets the current profile to profile which name was supplied. Returns an error if given
-    /// profile doesn't exist, or if it is already the current one
-    pub fn set_current(&mut self, password: &str, profile_name: &str) -> Result<()> {
-        log!(DEBUG, "Setting current profile to '{}'", profile_name);
+    /// Errors if no profile with the supplied name exists.
+    ///
+    /// Needs no authentication, so a frontend can call it before asking the user for a password
+    pub fn ensure_exists(&self, profile_name: &str) -> Result<()> {
+        match self.profiles.iter().any(|profile| profile.name == profile_name) {
+            true => Ok(()),
+            false => Err(new_err!(ProfileError: NotFound, profile_name.to_string()))
+        }
+    }
 
+    /// Errors if a profile with the supplied name already exists.
+    ///
+    /// Needs no authentication, so a frontend can call it before asking the user for a password
+    pub fn ensure_absent(&self, profile_name: &str) -> Result<()> {
+        match self.profiles.iter().any(|profile| profile.name == profile_name) {
+            true => Err(new_err!(ProfileError: AlreadyExists, profile_name.to_string())),
+            false => Ok(())
+        }
+    }
+
+    /// Errors if the supplied profile cannot become the current one, either because it doesn't
+    /// exist or because it is selected already.
+    ///
+    /// Needs no authentication, so a frontend can call it before asking the user for a password
+    pub fn ensure_selectable(&self, profile_name: &str) -> Result<()> {
         // a missing profile is reported as such, even when its name matches the current one
-        self.find_profile(profile_name)?;
+        self.ensure_exists(profile_name)?;
 
         if self.current_profile.as_deref() == Some(profile_name) {
             return Err(new_err!(ProfileError: AlreadySelected, profile_name.to_string()));
         }
+
+        Ok(())
+    }
+
+    /// Sets the current profile to profile which name was supplied. Returns an error if given
+    /// profile doesn't exist, or if it is already the current one
+    pub fn set_current(&mut self, password: &str, profile_name: &str) -> Result<()> {
+        log!(DEBUG, "Setting current profile to '{}'", profile_name);
+        self.ensure_selectable(profile_name)?;
 
         let profile = self.find_profile(profile_name)?;
         profile.verify_password(password)?;
@@ -171,10 +200,7 @@ impl ProfileData {
     pub fn new_profile(&mut self, profile: Profile) -> Result<()> {
         log!(DEBUG, "Adding a new profile: {:?}", &profile);
 
-        let profile_name = profile.name.clone();
-        if self.find_profile(&profile_name).is_ok() {
-            return Err(new_err!(ProfileError: AlreadyExists, profile_name));
-        }
+        self.ensure_absent(&profile.name)?;
         self.profiles.push(profile);
 
         self.save()?;

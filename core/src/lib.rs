@@ -1,116 +1,17 @@
 //! # Databoxer Core
 //!
-//! Contains the core functionality of the program: encryption, decryption, key and profile
-//! management, as well as the file format, error types and options passed across the public API.
-//! This crate has no knowledge of any particular frontend (CLI, GUI, ...) - it owns its own
-//! console-based logging and password prompting, which any frontend can configure.
+//! Contains the reusable pieces the program is built from: encryption, the boxfile format, key,
+//! profile and authentication management, error types and OS-specific paths. This crate has no
+//! knowledge of any particular frontend (CLI, GUI, ...) - it composes nothing on its own and
+//! performs no process of its own, leaving that to whichever frontend embeds it. It does own its
+//! logging and input prompting, which any frontend can configure.
 
 pub use error::{Error, ErrorType, Result};
 pub use encryption::cipher::{Checksum, Key, Nonce};
 
-pub mod app;
 pub mod data;
 pub mod encryption;
-pub mod options;
 pub mod error;
-pub mod io;
-
-pub mod os;
 pub mod hex;
-
-/// Encrypts the file at the given path. Extra options can be provided to control the process.
-///
-/// Most errors can be safely handled without an unsuccessful exit (e.g. file can just be skipped).
-/// Although it is better to exit on errors related with user authentication and profiles, as the
-/// program will simply not work without a user profile
-pub fn encrypt(file_path: &std::path::Path, options: &mut options::EncryptionOptions) -> Result<()> {
-    app::encrypt(
-        file_path,
-        &options.password,
-        options.keep_original_name,
-        options.generate_padding,
-        options.encrypt_metadata,
-        &mut options.output_paths
-    )
-}
-
-/// Decrypts the file at the given path. Extra options can be provided to control the process.
-/// Works similarly to the `encrypt` function just the other way around.
-///
-/// Most errors can be safely handled without an unsuccessful exit (e.g. file can just be skipped).
-/// Although it is better to exit on errors related with user authentication and profiles, as the
-/// program will simply not work without a user profile
-pub fn decrypt(file_path: &std::path::Path, options: &mut options::DecryptionOptions) -> Result<()> {
-    app::decrypt(file_path, &options.password, &mut options.output_paths)
-}
-
-
-/// Parses the provided boxfile and retrieves original metadata from the header.
-///
-/// Returns a vector which contains strings with retrieved information about original file name,
-/// extension, create, modify and access time. Will skip the unknown metadata unless optionally
-/// specified not to
-pub fn get_info(file_path: &std::path::Path, options: options::InformationOptions) -> Result<Vec<String>> {
-    app::get_info(file_path, options.show_unknown)
-}
-
-/// Creates a new profile with the provided password and profile name. Will **not** automatically
-/// switch to the new profile
-pub fn create_profile(profile_name: &str, options: options::ProfileCreateOptions) -> Result<()> {
-    app::profiles::create(profile_name, &options.password)
-}
-
-/// Deletes the profile with the corresponding name. After deletion will switch back to the first
-/// profile in the list or if there are no profiles left set the current profile to `None`
-///
-/// Needs the target profile's password to authenticate
-pub fn delete_profile(profile_name: &str, options: options::ProfileDeleteOptions) -> Result<()> {
-    app::profiles::delete(profile_name, &options.password)
-}
-
-/// Select (set as the current) the profile with the corresponding name
-///
-/// Needs the target profile's password to authenticate
-pub fn select_profile(profile_name: &str, options: options::ProfileSelectOptions) -> Result<()> {
-    app::profiles::select(profile_name, &options.password)
-}
-
-/// Returns the name of the currently selected profile
-///
-/// No authentication needed, as it just returns the name
-pub fn get_profile() -> Result<String> {
-    app::profiles::get_current()
-}
-
-/// Returns the names of all currently available profiles
-///
-/// No authentication needed, as it just returns the names
-pub fn get_profiles() -> Result<Vec<String>> {
-    app::profiles::get_all()
-}
-
-/// Generates a new encryption key for the current profile
-///
-/// **Warning:** this will replace the current encryption key, meaning that currently encrypted
-/// files will no longer be able to be decrypted due to a different key being used
-///
-/// Needs the current profile's password to authenticate
-pub fn new_key(options: options::KeyNewOptions) -> Result<()> {
-    app::keys::new(&options.password)
-}
-
-/// Returns the encryption key being used by the current profile in a hex format
-///
-/// Needs the current profile's password to authenticate
-pub fn get_key(options: options::KeyGetOptions) -> Result<String> {
-    app::keys::get(&options.password, options.as_byte_array)
-}
-
-/// Sets a new encryption key for the current profile. The input key has to be a valid 32-byte long
-/// hex key for it to work (e.g. input key of `"0128AE1005..."` translates to `[1, 40, 174, 16, 5,
-/// ...]`)
-///
-/// Needs the current profile's password to authenticate
-pub fn set_key(new_key: &str, options: options::KeySetOptions) -> Result<()> {
-    app::keys::set(new_key, &options.password)
-}
+pub mod io;
+pub mod os;

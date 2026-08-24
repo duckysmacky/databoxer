@@ -218,11 +218,9 @@ fn test_key_set_from_file() {
     let output = databoxer_cmd!(p "key set"; "--file", &key_file_path.to_str().unwrap());
     assert!(output.status.success(), "Key set failed");
 
-    // TODO: create a macro for this type of things
-    let mut options = databoxer_core::options::KeyGetOptions::default();
-    let password = common::PASSWORD.to_string();
-    options.password = Some(&password);
-    let output_key = databoxer_core::get_key(options).expect("Unable to get current key");
+    let key_bytes = databoxer_core::data::keys::get_key(common::PASSWORD)
+        .expect("Unable to get current key");
+    let output_key = databoxer_core::hex::bytes_to_string(&key_bytes);
     
     assert_eq!(key, output_key);
 

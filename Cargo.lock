@@ -284,11 +284,13 @@ dependencies = [
 name = "databoxer-cli"
 version = "0.2.0"
 dependencies = [
+ "chrono",
  "clap",
  "databoxer-core",
  "libc",
  "paste",
  "rand",
+ "uuid",
  "windows-sys",
 ]
 
@@ -299,14 +301,12 @@ dependencies = [
  "argon2",
  "bincode",
  "chacha20poly1305",
- "chrono",
  "paste",
  "rand",
  "serde",
  "serde_json",
  "sha2",
  "toml",
- "uuid",
 ]
 
 [[package]]

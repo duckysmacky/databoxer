@@ -2,7 +2,8 @@
 
 use std::{fs, io};
 use std::path::Path;
-use databoxer_core::{options, ErrorType};
+use databoxer_core::data::{self, profiles::Profile};
+use databoxer_core::ErrorType;
 
 pub mod command;
 
@@ -13,20 +14,19 @@ pub const TEST_DIR: &str = "tests/files/test";
 
 /// Global test environment setup (must be run before each test)
 pub fn setup() {
-    let password = String::from(PASSWORD);
-    let mut create_options = options::ProfileCreateOptions::default();
-    create_options.password = Some(&password);
-    
-    let mut select_options = options::ProfileSelectOptions::default();
-    select_options.password = Some(&password);
-    
-    databoxer_core::create_profile(PROFILE_NAME, create_options)
+    let mut profiles = data::get_profiles()
+        .unwrap_or_else(|err| panic!("Unable to get profiles: {}", err.message()));
+
+    let profile = Profile::new(PROFILE_NAME, PASSWORD)
+        .unwrap_or_else(|err| panic!("Unable to build test profile: {}", err.message()));
+
+    profiles.new_profile(profile)
         .unwrap_or_else(|err| match err.get_type() {
             ErrorType::ProfileError(_) => println!("{}", err.message()),
             _ => panic!("Unable to create test profile: {}", err.message())
         });
 
-    databoxer_core::select_profile(PROFILE_NAME, select_options)
+    profiles.set_current(PASSWORD, PROFILE_NAME)
         .unwrap_or_else(|err| match err.get_type() {
             ErrorType::ProfileError(_) => println!("{}", err.message()),
             _ => panic!("Unable to select test profile: {}", err.message())
@@ -38,11 +38,10 @@ pub fn setup() {
 
 /// Global test environment cleanup (must be run after each test)
 pub fn cleanup() {
-    let password = String::from(PASSWORD);
-    let mut delete_options = options::ProfileDeleteOptions::default();
-    delete_options.password = Some(&password);
-    
-    databoxer_core::delete_profile(PROFILE_NAME, delete_options)
+    let mut profiles = data::get_profiles()
+        .unwrap_or_else(|err| panic!("Unable to get profiles: {}", err.message()));
+
+    profiles.delete_profile(PASSWORD, PROFILE_NAME)
         .unwrap_or_else(|err| match err.get_type() {
             ErrorType::ProfileError(_) => println!("{}", err.message()),
             _ => panic!("Unable to delete test profile: {}", err.message())

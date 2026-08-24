@@ -34,8 +34,7 @@ pub fn prompt_lines(message: &str) -> Result<Vec<String>> {
     prompter().prompt_lines(message).map_err(|e| new_err!(IOError: StandardIO; e))
 }
 
-/// Prompts the user for the current profile's password, with hidden input
-pub fn prompt_password() -> Result<String> {
-    prompter().prompt_hidden("Enter the password for the current profile")
-        .map_err(|e| new_err!(IOError: StandardIO; e))
+/// Prompts the user for a single line of hidden input, such as a password
+pub fn prompt_hidden(message: &str) -> Result<String> {
+    prompter().prompt_hidden(message).map_err(|e| new_err!(IOError: StandardIO; e))
 }
