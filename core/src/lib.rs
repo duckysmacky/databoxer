@@ -11,5 +11,6 @@ pub mod encryption;
 pub mod hex;
 pub mod io;
 pub mod os;
+pub mod setup;
 
 pub use encryption::cipher::{Checksum, Key, Nonce};

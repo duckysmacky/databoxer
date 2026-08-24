@@ -4,6 +4,7 @@ use std::{process, time::Instant};
 
 use clap::Parser;
 
+use databoxer_core::setup as core_setup;
 use databoxer_cli::{
     command::{Cli, Commands, KeyCommands, ProfileCommands},
     error::{self, CliError},
@@ -21,8 +22,10 @@ fn main() {
         io::log::LoggerMode::NORMAL
     };
 
-    databoxer_core::io::log::set_logger(Box::new(io::log::CliLogger::new(cli.debug, logger_mode)));
-    databoxer_core::io::input::set_input_prompter(Box::new(io::input::CliInputPrompter));
+    core_setup::set_hooks(core_setup::FrontendHooks {
+        logger: Box::new(io::log::CliLogger::new(cli.debug, logger_mode)),
+        prompter: Box::new(io::input::CliInputPrompter),
+    });
 
     process::exit(run(cli.command.as_ref()));
 }
