@@ -103,7 +103,7 @@ impl BoxfileHeader {
         log!(DEBUG, "Serializing Boxfile header");
 
         let config = bincode::config::standard();
-        let bytes = bincode::serde::encode_to_vec(&self, config)
+        let bytes = bincode::serde::encode_to_vec(self, config)
             .map_err(|source| BoxfileError::Encode { what: "the boxfile header", source })?;
 
         log!(DEBUG, "Boxfile header successfully serialized");
@@ -154,8 +154,9 @@ impl BoxfileHeader {
 /// (not encrypted) data, encrypted data and an empty value (in case if field can be `None` to
 /// avoid extra encryption). Only `Plaintext` values should be interacted with, while everything
 /// else to be considered non-relevant for outside interaction
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub enum EncryptedField<T> {
+    #[default]
     Empty,
     Plaintext(T),
     Encrypted(Box<[u8]>),
@@ -207,7 +208,7 @@ where
         decrypt_function: impl Fn(&[u8]) -> Result<Vec<u8>, BoxfileError>
     ) -> Result<(), BoxfileError> {
         if let EncryptedField::Encrypted(encrypted) = self {
-            let decrypted = decrypt_function(&encrypted)?;
+            let decrypted = decrypt_function(encrypted)?;
             let config = bincode::config::standard();
             let (data, _): (T, usize) = bincode::serde::decode_from_slice(&decrypted, config)
                 .map_err(|source| BoxfileError::Decode { what: "a boxfile metadata field", source })?;
@@ -225,11 +226,5 @@ impl<T> From<Option<T>> for EncryptedField<T> {
             Some(v) => EncryptedField::Plaintext(v),
             None => EncryptedField::Empty,
         }
-    }
-}
-
-impl<T> Default for EncryptedField<T> {
-    fn default() -> Self {
-        EncryptedField::Empty
     }
 }

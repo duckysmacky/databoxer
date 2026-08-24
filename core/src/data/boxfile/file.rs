@@ -83,7 +83,7 @@ impl Boxfile {
             }
         }
 
-        let file_data = fs::read_bytes(&file_path).map_err(BoxfileError::io(file_path))?;
+        let file_data = fs::read_bytes(file_path).map_err(BoxfileError::io(file_path))?;
         let mut padding_len = 0;
         let body: Box<[u8]> = match generate_padding {
             true => {
@@ -191,7 +191,7 @@ impl Boxfile {
         log!(DEBUG, "Serializing and saving boxfile to {:?}", path);
 
         let config = bincode::config::standard();
-        let bytes = bincode::serde::encode_to_vec(&self, config)
+        let bytes = bincode::serde::encode_to_vec(self, config)
             .map_err(|source| BoxfileError::Encode { what: "the boxfile", source })?;
         fs::write_new_bytes(path, &bytes).map_err(BoxfileError::io(path))?;
 
@@ -261,9 +261,8 @@ impl Boxfile {
     fn generate_padding(data_len: usize, block_size: usize) -> Vec<u8> {
         let padding_len = block_size - (data_len % block_size);
         let mut rng = rand::rng();
-        let padding = iter::repeat_with(|| rng.random::<u8>())
+        iter::repeat_with(|| rng.random::<u8>())
             .take(padding_len)
-            .collect::<Vec<u8>>();
-        padding
+            .collect::<Vec<u8>>()
     }
 }
