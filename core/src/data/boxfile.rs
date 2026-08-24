@@ -1,8 +1,10 @@
 mod boxfile;
+mod error;
 mod header;
 
 pub use {
     boxfile::{Boxfile, FileMetadata},
+    error::BoxfileError,
     header::*,
 };
 

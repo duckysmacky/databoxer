@@ -5,47 +5,49 @@ use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
 };
 
-use crate::{Key, new_err, Result};
+use crate::Key;
+use super::profiles::ProfileError;
 
 /// Hashes the given password. Returns hashed password and key generated based on the password hash
 /// used to encrypt the stored encryption key
-pub fn hash_password(password: &str) -> Result<(String, Key)> {
+pub fn hash_password(password: &str) -> Result<(String, Key), ProfileError> {
     let salt = SaltString::generate(&mut OsRng);
     let mut password_key = Key::default();
 
     let argon2 = Argon2::default();
     let password_hash = argon2.hash_password(password.as_bytes(), &salt)
-        .map_err(|err| new_err!(CryptoError: Hash, "Profile password".to_string(); err))?.to_string();
+        .map_err(ProfileError::Hashing)?.to_string();
     argon2.hash_password_into(password.as_bytes(), salt.as_str().as_bytes(), &mut password_key)
-        .map_err(|err| new_err!(CryptoError: Hash, "Key from profile password".to_string(); err))?;
+        .map_err(ProfileError::KeyDerivation)?;
     Ok((password_hash, password_key))
 }
 
 /// Verifies password by comparing it to the password hash, returning password hash's Salt 
 /// if the verification is successful. Errors if the Salt is missing
 // TODO: refactor to return a bool instead of relaying on Result
-pub fn verify_password<'a>(password_hash: &'a str, password: &str) -> Result<Salt<'a>> {
-    let hash = PasswordHash::new(password_hash)
-        .map_err(|_| new_err!(InvalidData: InvalidLength, "Password hash".to_string()))?;
+pub fn verify_password<'a>(
+    password_hash: &'a str,
+    password: &str
+) -> Result<Salt<'a>, ProfileError> {
+    let hash = PasswordHash::new(password_hash).map_err(ProfileError::MalformedHash)?;
 
     let argon2 = Argon2::default();
     argon2.verify_password(password.as_bytes(), &hash)
-        .map_err(|_| new_err!(ProfileError: AuthenticationFailed))?;
-    
-    let salt = hash.salt
-        .ok_or_else(|| new_err!(InvalidData: MissingData, "Salt for the password hash".to_string()))?;
+        .map_err(|_| ProfileError::AuthenticationFailed)?;
+
+    let salt = hash.salt.ok_or(ProfileError::MissingSalt)?;
     Ok(salt)
 }
 
 /// Returns the encryption key generated based on the password if the password verification is
 /// successful
-pub fn get_password_key(password_hash: &str, password: &str) -> Result<Key> {
+pub fn get_password_key(password_hash: &str, password: &str) -> Result<Key, ProfileError> {
     let salt = verify_password(password_hash, password)?;
     let mut password_key = Key::default();
     
     let argon2 = Argon2::default();
     argon2.hash_password_into(password.as_bytes(), salt.as_str().as_bytes(), &mut password_key)
-        .map_err(|err| new_err!(CryptoError: Hash, "Key from profile password".to_string(); err))?;
+        .map_err(ProfileError::KeyDerivation)?;
     Ok(password_key)
 }
 
@@ -56,7 +58,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_password_hash() -> Result<()> {
+    fn test_password_hash() -> Result<(), ProfileError> {
         let password = "my_password123";
         let (hash, _) = hash_password(password)?;
         
@@ -65,18 +67,20 @@ mod tests {
     }
     
     #[test]
-    fn test_password_key() -> Result<()> {
+    fn test_password_key() -> Result<(), ProfileError> {
         let password = "my_password123";
         let text = "Hello, world!";
         let nonce = cipher::generate_nonce();
         
         // Encrypt text with original password key
         let (hash, key) = hash_password(password)?;
-        let encrypted_text = cipher::encrypt(&key, &nonce, text.as_bytes())?;
+        let encrypted_text = cipher::encrypt(&key, &nonce, text.as_bytes())
+            .map_err(ProfileError::KeyEncryption)?;
         
         // Decrypt text with retrieved password key after verifying it
         let key = get_password_key(&hash, password)?;
-        let decrypted_bytes = cipher::decrypt(&key, &nonce, &encrypted_text)?;
+        let decrypted_bytes = cipher::decrypt(&key, &nonce, &encrypted_text)
+            .map_err(ProfileError::KeyDecryption)?;
         let decrypted_text = String::from_utf8_lossy(&decrypted_bytes);
         
         assert_eq!(decrypted_text, text);

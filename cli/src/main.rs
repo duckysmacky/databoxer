@@ -4,7 +4,7 @@ use std::{time::Instant, process};
 
 use clap::ArgMatches;
 
-use databoxer_cli::{command, error, handlers, io, output};
+use databoxer_cli::{command, error::{self, CliError}, handlers, io, output};
 
 fn main() {
     let global_args = &command::get_command().get_matches();
@@ -53,30 +53,36 @@ pub fn run(global_args: &ArgMatches) -> i32 {
 
     /* INFORMATION */
     if let Some(args) = global_args.subcommand_matches("info") {
-        return handlers::handle_info(args);
+        handlers::handle_info(args);
+        return error::SUCCESS;
     }
 
     /* PROFILE */
     if let Some(args) = global_args.subcommand_matches("profile") {
         /* PROFILE CREATE */
         if let Some(args) = args.subcommand_matches("new") {
-            return handlers::handle_profile_create(args);
+            handlers::handle_profile_create(args);
+            return error::SUCCESS;
         }
         /* PROFILE DELETE */
         if let Some(args) = args.subcommand_matches("delete") {
-            return handlers::handle_profile_delete(args);
+            handlers::handle_profile_delete(args);
+            return error::SUCCESS;
         }
         /* PROFILE SET */
         if let Some(args) = args.subcommand_matches("set") {
-            return handlers::handle_profile_set(args);
+            handlers::handle_profile_set(args);
+            return error::SUCCESS;
         }
         /* PROFILE GET */
         if let Some(args) = args.subcommand_matches("get") {
-            return handlers::handle_profile_get(args);
+            handlers::handle_profile_get(args);
+            return error::SUCCESS;
         }
         /* PROFILE LIST */
         if let Some(args) = args.subcommand_matches("list") {
-            return handlers::handle_profile_list(args);
+            handlers::handle_profile_list(args);
+            return error::SUCCESS;
         }
     }
 
@@ -84,17 +90,20 @@ pub fn run(global_args: &ArgMatches) -> i32 {
     if let Some(args) = global_args.subcommand_matches("key") {
         /* KEY NEW */
         if let Some(args) = args.subcommand_matches("new") {
-            return handlers::handle_key_new(args);
+            handlers::handle_key_new(args);
+            return error::SUCCESS;
         }
         /* KEY GET */
         if let Some(args) = args.subcommand_matches("get") {
-            return handlers::handle_key_get(args);
+            handlers::handle_key_get(args);
+            return error::SUCCESS;
         }
         /* KEY SET */
         if let Some(args) = args.subcommand_matches("set") {
-            return handlers::handle_key_set(args);
+            handlers::handle_key_set(args);
+            return error::SUCCESS;
         }
     }
 
-    error::CLI_FAILURE
+    error::fail(&CliError::NoCommand)
 }

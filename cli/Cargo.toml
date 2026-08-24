@@ -21,7 +21,7 @@ path = "src/main.rs"
 [dependencies]
 databoxer-core = { workspace = true }
 clap = { workspace = true }
-paste = { workspace = true }
+thiserror = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
 

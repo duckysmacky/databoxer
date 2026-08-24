@@ -1,7 +1,5 @@
 //! Contains hex helper functions
 
-use crate::{new_err, Result};
-
 /// Transforms and formats a byte array into a hex string
 /// (e.g. `[1, 40, 174, 16, 5, ...]` into `"0128AE1005..."`)
 pub fn bytes_to_string(bytes: &[u8]) -> String {
@@ -18,23 +16,26 @@ pub fn bytes_to_string(bytes: &[u8]) -> String {
 
 /// Transforms formats a hex string into an array of bytes
 /// (e.g. `"0128AE1005..."` into `[1, 40, 174, 16, 5, ...`])
-pub fn string_to_bytes(hex_string: &str) -> Result<Vec<u8>> {
+///
+/// The error is a plain message describing what is wrong with the input: there is nothing here for
+/// a caller to match on, and whichever domain the hex belongs to supplies the context
+pub fn string_to_bytes(hex_string: &str) -> Result<Vec<u8>, String> {
     // operating on bytes rather than chars, as the two only line up for ASCII input
     let input = hex_string.as_bytes();
 
     if input.len() % 2 != 0 {
-        return Err(new_err!(InvalidData: InvalidHex, hex_string.to_string(); "Length is not a multiple of 2"));
+        return Err(format!("length ({}) is not a multiple of 2", input.len()));
     }
 
     let mut hex_bytes = Vec::with_capacity(input.len() / 2);
 
-    for pair in input.chunks_exact(2) {
+    for (index, pair) in input.chunks_exact(2).enumerate() {
         match (hex_digit(pair[0]), hex_digit(pair[1])) {
             (Some(high), Some(low)) => hex_bytes.push(high << 4 | low),
-            _ => {
-                let pair = String::from_utf8_lossy(pair);
-                return Err(new_err!(InvalidData: InvalidHex, format!("at byte '{}'", pair); "Invalid hex character"));
-            }
+            _ => return Err(format!(
+                "invalid hex character in byte pair '{}' at index {}",
+                String::from_utf8_lossy(pair), index
+            ))
         }
     }
 
@@ -61,7 +62,7 @@ mod tests {
     }
 
     #[test]
-    fn test_string_to_bytes() -> Result<()> {
+    fn test_string_to_bytes() -> Result<(), String> {
         assert_eq!(string_to_bytes("0128AE1005")?, vec![1, 40, 174, 16, 5]);
         assert_eq!(string_to_bytes("0128ae1005")?, vec![1, 40, 174, 16, 5]);
         assert_eq!(string_to_bytes("")?, Vec::<u8>::new());

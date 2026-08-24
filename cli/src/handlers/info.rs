@@ -9,15 +9,15 @@ use chrono::{DateTime, Local};
 use clap::ArgMatches;
 
 use databoxer_core::{
-    data::boxfile::{Boxfile, FileMetadata},
-    log, Result,
+    data::boxfile::{Boxfile, BoxfileError, FileMetadata},
+    log,
 };
 
-use crate::{error::{self, Policy}, output, path};
+use crate::{error::{self, CliError, OrFail}, output, path};
 
 /// Handles the `databoxer info` subcommand. Returns an exit code indicating the status of the 
 /// operation (0 for success, non-zero for errors).
-pub fn handle_info(args: &ArgMatches) -> i32 {
+pub fn handle_info(args: &ArgMatches) {
     let file_path = {
         let path = args.get_one::<String>("PATH").expect("File path is required");
         let paths = path::parse_paths(vec![PathBuf::from(path)], false);
@@ -25,33 +25,26 @@ pub fn handle_info(args: &ArgMatches) -> i32 {
         match paths.into_iter().next() {
             Some(path) => path,
             // `parse_paths` has already reported why nothing was found
-            None => return error::CLI_FAILURE
+            None => error::fail(&CliError::NoInputFiles)
         }
     };
 
     output!(STATUS, "Retrieving information about '{}'...", file_path.display());
 
-    match get_info(&file_path, args.get_flag("SHOW_UNKNOWN")) {
-        Ok(info_lines) => {
-            output!(SUCCESS, "Displaying information about '{}':", file_path.display());
+    let info_lines = get_info(&file_path, args.get_flag("SHOW_UNKNOWN")).or_fail_with(
+        format!("Unable to get information about '{}'", file_path.display())
+    );
 
-            for line in info_lines {
-                output!(DATA, "{}", line);
-            }
+    output!(SUCCESS, "Displaying information about '{}':", file_path.display());
 
-            0
-        }
-        Err(err) => {
-            log!(ERROR, "Unable to get information about '{}' ({})", file_path.to_string_lossy(), err.name());
-            error::report(&err, Policy::Single);
-            err.exit_code() as i32
-        }
+    for line in info_lines {
+        output!(DATA, "{}", line);
     }
 }
 
 /// Parses the boxfile at the given path and renders what its header remembers about the original
 /// file as display lines. Metadata which was never recorded is skipped unless asked for
-fn get_info(input_path: &Path, show_unknown: bool) -> Result<Vec<String>> {
+fn get_info(input_path: &Path, show_unknown: bool) -> Result<Vec<String>, BoxfileError> {
     log!(INFO, "Getting file information...");
 
     let boxfile = Boxfile::parse(input_path)?;

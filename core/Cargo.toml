@@ -2,6 +2,10 @@
 name = "databoxer-core"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+description = "Core encryption and data-management library for Databoxer"
+license-file = "../LICENSE"
+repository.workspace = true
 
 [lib]
 path = "src/lib.rs"
@@ -20,4 +24,4 @@ sha2 = { workspace = true }
 argon2 = { workspace = true }
 
 # utility
-paste = { workspace = true }
+thiserror = { workspace = true }

@@ -3,10 +3,7 @@ pub mod command;
 
 use std::{path::Path, fs, io};
 
-use databoxer_core::{
-    data::{self, profiles::Profile},
-    ErrorType,
-};
+use databoxer_core::data::{self, profiles::{Profile, ProfileError}};
 
 pub const PROFILE_NAME: &str = "common-test-profile";
 pub const PASSWORD: &str = "common-test-password";
@@ -16,21 +13,22 @@ pub const TEST_DIR: &str = "tests/files/test";
 /// Global test environment setup (must be run before each test)
 pub fn setup() {
     let mut profiles = data::get_profiles()
-        .unwrap_or_else(|err| panic!("Unable to get profiles: {}", err.message()));
+        .unwrap_or_else(|err| panic!("Unable to get profiles: {}", err));
 
     let profile = Profile::new(PROFILE_NAME, PASSWORD)
-        .unwrap_or_else(|err| panic!("Unable to build test profile: {}", err.message()));
+        .unwrap_or_else(|err| panic!("Unable to build test profile: {}", err));
 
+    // a profile left behind by an earlier run is fine to carry on with
     profiles.new_profile(profile)
-        .unwrap_or_else(|err| match err.get_type() {
-            ErrorType::ProfileError(_) => println!("{}", err.message()),
-            _ => panic!("Unable to create test profile: {}", err.message())
+        .unwrap_or_else(|err| match &err {
+            ProfileError::AlreadyExists(_) => println!("{}", err),
+            _ => panic!("Unable to create test profile: {}", err)
         });
 
     profiles.set_current(PASSWORD, PROFILE_NAME)
-        .unwrap_or_else(|err| match err.get_type() {
-            ErrorType::ProfileError(_) => println!("{}", err.message()),
-            _ => panic!("Unable to select test profile: {}", err.message())
+        .unwrap_or_else(|err| match &err {
+            ProfileError::AlreadySelected(_) => println!("{}", err),
+            _ => panic!("Unable to select test profile: {}", err)
         });
 
     copy_original_files()
@@ -40,12 +38,13 @@ pub fn setup() {
 /// Global test environment cleanup (must be run after each test)
 pub fn cleanup() {
     let mut profiles = data::get_profiles()
-        .unwrap_or_else(|err| panic!("Unable to get profiles: {}", err.message()));
+        .unwrap_or_else(|err| panic!("Unable to get profiles: {}", err));
 
+    // nothing to clean up if the profile is already gone
     profiles.delete_profile(PASSWORD, PROFILE_NAME)
-        .unwrap_or_else(|err| match err.get_type() {
-            ErrorType::ProfileError(_) => println!("{}", err.message()),
-            _ => panic!("Unable to delete test profile: {}", err.message())
+        .unwrap_or_else(|err| match &err {
+            ProfileError::NotFound(_) => println!("{}", err),
+            _ => panic!("Unable to delete test profile: {}", err)
         });
 
     delete_test_files()

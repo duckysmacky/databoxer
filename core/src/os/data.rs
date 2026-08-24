@@ -1,13 +1,11 @@
 //! Contains functions which rely on operating system with their functionality and return values
 //! depending on it
 
-use std::{path::PathBuf, env, fs};
-
-use crate::{new_err, Result};
+use std::{io, path::PathBuf, env, fs};
 
 /// Returns the application data directory based on the OS. Used for storing profiles and other
 /// information for program's functionality which is not meant to be edited by the user
-pub fn get_data_dir() -> Result<PathBuf> {
+pub fn get_data_dir() -> io::Result<PathBuf> {
     let mut data_dir = get_env_home()?;
 
     if cfg!(target_os = "windows") {
@@ -19,17 +17,16 @@ pub fn get_data_dir() -> Result<PathBuf> {
     }
 
     if !data_dir.exists() {
-        fs::create_dir_all(&data_dir)
-            .map_err(|e| new_err!(IOError: Create, data_dir.clone(); e))?;
+        fs::create_dir_all(&data_dir)?;
     }
     Ok(data_dir)
 }
 
 /// Returns the application config directory based on the OS. Used for storing configuration files
 /// which can be edited by user to change program's functionality
-pub fn get_config_dir() -> Result<PathBuf> {
+pub fn get_config_dir() -> io::Result<PathBuf> {
     let mut config_dir = get_env_home()?;
-    
+
     if cfg!(target_os = "windows") {
         config_dir.push("Databoxer/Config/");
     } else if cfg!(target_os = "macos") {
@@ -39,15 +36,17 @@ pub fn get_config_dir() -> Result<PathBuf> {
     }
 
     if !config_dir.exists() {
-        fs::create_dir_all(&config_dir)
-            .map_err(|e| new_err!(IOError: Create, config_dir.clone(); e))?;
+        fs::create_dir_all(&config_dir)?;
     }
     Ok(config_dir)
 }
 
 /// Returns the "Home" environment variable based on the OS for later file storage. For windows, it
 /// is $APPDATA, for others it is $HOME
-fn get_env_home() -> Result<PathBuf> {
+///
+/// A missing variable is reported as a `NotFound` IO error: to the caller it is the same kind of
+/// problem as the directory itself being unreachable
+fn get_env_home() -> io::Result<PathBuf> {
     let env = {
         if cfg!(target_os = "windows") {
             "APPDATA"
@@ -55,9 +54,11 @@ fn get_env_home() -> Result<PathBuf> {
             "HOME"
         }
     };
-    
-    let home_path = env::var(env)
-        .map_err(|_| new_err!(OSError: EnvVariable, env.to_string()))?;
-    
+
+    let home_path = env::var(env).map_err(|_| io::Error::new(
+        io::ErrorKind::NotFound,
+        format!("the '{}' environment variable is not set", env)
+    ))?;
+
     Ok(PathBuf::from(home_path))
 }

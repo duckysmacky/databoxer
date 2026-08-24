@@ -6,8 +6,9 @@ use crate::{
     data::boxfile::info,
     encryption::cipher,
     os::OS,
-    Key, log, new_err, Nonce,
+    Key, log, Nonce,
 };
+use super::BoxfileError;
 
 /// The header for the `boxfile`, which contains extra information about the file. This
 /// includes a unique identifier (magic), length of the generated padding, the original
@@ -52,7 +53,7 @@ impl BoxfileHeader {
         padding_len: u16,
         nonce: Nonce,
         encrypt_original_data: bool
-    ) -> crate::Result<Self> {
+    ) -> Self {
         let os = OS::get();
         let name = file_path.file_stem().map(|name| {
             name.to_os_string().into_string().unwrap_or_else(|name| {
@@ -82,7 +83,7 @@ impl BoxfileHeader {
             Err(_) => None,
         };
 
-        Ok(BoxfileHeader {
+        BoxfileHeader {
             magic: info::MAGIC,
             version: info::CURRENT_VERSION,
             encrypt_original_data,
@@ -94,16 +95,16 @@ impl BoxfileHeader {
             access_time: access_time.into(),
             padding_len,
             nonce
-        })
+        }
     }
 
     /// Returns the header serialized as plain bytes
-    pub fn as_bytes(&self) -> crate::Result<Vec<u8>> {
+    pub fn as_bytes(&self) -> Result<Vec<u8>, BoxfileError> {
         log!(DEBUG, "Serializing Boxfile header");
 
         let config = bincode::config::standard();
         let bytes = bincode::serde::encode_to_vec(&self, config)
-            .map_err(|e| new_err!(ParseError: Encoding, "Boxfile header".to_string(); e.to_string()))?;
+            .map_err(|source| BoxfileError::Encode { what: "the boxfile header", source })?;
 
         log!(DEBUG, "Boxfile header successfully serialized");
         Ok(bytes)
@@ -111,12 +112,13 @@ impl BoxfileHeader {
 
     /// Encrypts the file's original data within the header (file name, extension, etc.)
     /// using the provided encryption key
-    pub fn encrypt_data(&mut self, key: &Key) -> crate::Result<()> {
+    pub fn encrypt_data(&mut self, key: &Key) -> Result<(), BoxfileError> {
         log!(DEBUG, "Encrypting header data");
 
         // this function is used for encryption within the inner wrapper to avoid boilerplate. same
         // with decryption
-        let func = |data: &[u8]| cipher::encrypt(key, &self.nonce, data);
+        let func = |data: &[u8]| cipher::encrypt(key, &self.nonce, data)
+            .map_err(BoxfileError::Encryption);
 
         if self.encrypt_original_data {
             self.name.encrypt(func)?;
@@ -130,10 +132,11 @@ impl BoxfileHeader {
     }
 
     /// Decrypts the file's original data using the provided encryption key
-    pub fn decrypt_data(&mut self, key: &Key) -> crate::Result<()> {
+    pub fn decrypt_data(&mut self, key: &Key) -> Result<(), BoxfileError> {
         log!(DEBUG, "Decrypting header data");
 
-        let func = |data: &[u8]| cipher::decrypt(key, &self.nonce, data);
+        let func = |data: &[u8]| cipher::decrypt(key, &self.nonce, data)
+            .map_err(BoxfileError::Decryption);
 
         if self.encrypt_original_data {
             self.name.decrypt(func)?;
@@ -182,11 +185,14 @@ where
     /// Encrypts the field value and stores it as an array of bytes within itself. Accepts an
     /// encryption function to operate on data. This is made to reduce the amount of repeating
     /// argument passing from one field to the other.
-    pub fn encrypt(&mut self, encrypt_function: impl Fn(&[u8]) -> crate::Result<Vec<u8>>) -> crate::Result<()> {
+    pub fn encrypt(
+        &mut self,
+        encrypt_function: impl Fn(&[u8]) -> Result<Vec<u8>, BoxfileError>
+    ) -> Result<(), BoxfileError> {
         if let EncryptedField::Plaintext(data) = self {
             let config = bincode::config::standard();
             let bytes = bincode::serde::encode_to_vec(data, config)
-                .map_err(|e| new_err!(ParseError: Encoding, "Boxfile metadata field".to_string(); e.to_string()))?;
+                .map_err(|source| BoxfileError::Encode { what: "a boxfile metadata field", source })?;
             let encrypted = encrypt_function(&bytes)?;
             *self = EncryptedField::Encrypted(encrypted.into());
         }
@@ -196,12 +202,15 @@ where
     /// Decrypts the field value and restores the original data type `T` within itself. Accepts a
     /// decryption function to operate on data. This is made to reduce the amount of repeating
     /// argument passing from one field to the other.
-    pub fn decrypt(&mut self, decrypt_function: impl Fn(&[u8]) -> crate::Result<Vec<u8>>) -> crate::Result<()> {
+    pub fn decrypt(
+        &mut self,
+        decrypt_function: impl Fn(&[u8]) -> Result<Vec<u8>, BoxfileError>
+    ) -> Result<(), BoxfileError> {
         if let EncryptedField::Encrypted(encrypted) = self {
             let decrypted = decrypt_function(&encrypted)?;
             let config = bincode::config::standard();
             let (data, _): (T, usize) = bincode::serde::decode_from_slice(&decrypted, config)
-                .map_err(|e| new_err!(ParseError: Decoding, "Boxfile metadata field".to_string(); e.to_string()))?;
+                .map_err(|source| BoxfileError::Decode { what: "a boxfile metadata field", source })?;
             *self = EncryptedField::Plaintext(data);
         }
         Ok(())

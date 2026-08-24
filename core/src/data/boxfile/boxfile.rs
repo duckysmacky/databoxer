@@ -11,9 +11,9 @@ use crate::{
     encryption::cipher,
     io::fs,
     os::OS,
-    Checksum, hex, Key, log, new_err, Result,
+    Checksum, hex, Key, log,
 };
-use super::{header::BoxfileHeader, info};
+use super::{error::BoxfileError, header::BoxfileHeader, info};
 
 /// The original file's information, as recovered from a `boxfile` header. Any field which was
 /// never recorded, or which is still encrypted, comes back as `None`
@@ -70,16 +70,20 @@ impl Boxfile {
     /// `Nonce` for later usage in encryption. Padding is also generated during this
     /// step and added at the end of the original file's data as a part of the body.
     /// Checksum is generated at the very end from the header and body content.
-    pub fn new(file_path: &Path, generate_padding: bool, encrypt_header_data: bool) -> Result<Self> {
+    pub fn new(
+        file_path: &Path,
+        generate_padding: bool,
+        encrypt_header_data: bool
+    ) -> Result<Self, BoxfileError> {
         log!(DEBUG, "Initializing boxfile from {:?}", file_path);
 
         if let Some(extension) = file_path.extension() {
             if extension == "box" {
-                return Err(new_err!(InvalidData: InvalidFile, file_path.to_path_buf(); "File is already encrypted (has a .box extension)"));
+                return Err(BoxfileError::AlreadyBoxed(file_path.to_path_buf()));
             }
         }
 
-        let file_data = fs::read_bytes(&file_path).map_err(|e| new_err!(IOError: Read, file_path.to_path_buf(); e))?;
+        let file_data = fs::read_bytes(&file_path).map_err(BoxfileError::io(file_path))?;
         let mut padding_len = 0;
         let body: Box<[u8]> = match generate_padding {
             true => {
@@ -96,7 +100,7 @@ impl Boxfile {
             padding_len,
             cipher::generate_nonce(),
             encrypt_header_data,
-        )?;
+        );
         log!(DEBUG, "Boxfile header generated: {:?}", &header);
 
         let mut hasher = Sha256::new();
@@ -115,7 +119,7 @@ impl Boxfile {
     }
 
     /// Parses the provided file, tries to deserialize it and returns a parsed `boxfile`.
-    pub fn parse(file_path: &Path) -> Result<Self> {
+    pub fn parse(file_path: &Path) -> Result<Self, BoxfileError> {
         log!(DEBUG, "Parsing boxfile from {:?}", file_path);
 
         if let Some(extension) = file_path.extension() {
@@ -124,14 +128,14 @@ impl Boxfile {
             }
         }
 
-        let bytes = fs::read_bytes(file_path).map_err(|e| new_err!(IOError: Read, file_path.to_path_buf(); e))?;
+        let bytes = fs::read_bytes(file_path).map_err(BoxfileError::io(file_path))?;
         if bytes.len() < 4 {
-            return Err(new_err!(ParseError: Boxfile, file_path.into(); "File is too small to be parsed correctly"))
+            return Err(BoxfileError::TooSmall(file_path.to_path_buf()))
         }
-        
+
         let magic = &bytes[..3];
         if magic != &info::MAGIC[..3] {
-            return Err(new_err!(ParseError: Boxfile, file_path.into(); "File is not a valid boxfile"))
+            return Err(BoxfileError::NotBoxfile(file_path.to_path_buf()))
         }
         
         let version = &bytes[3];
@@ -142,7 +146,7 @@ impl Boxfile {
         // TODO: add custom configuration options
         let config = bincode::config::standard();
         let (boxfile, _bytes): (Boxfile, usize) = bincode::serde::decode_from_slice(&bytes, config)
-            .map_err(|err| new_err!(ParseError: Decoding, err.to_string()))?;
+            .map_err(|source| BoxfileError::Decode { what: "the boxfile", source })?;
 
         log!(DEBUG, "Boxfile deserialized");
         Ok(boxfile)
@@ -167,7 +171,7 @@ impl Boxfile {
     
     /// Verifies checksum for the `boxfile` by generating new checksum for current data and
     /// comparing it to the checksum stored in the header
-    pub fn verify_checksum(&self) -> Result<bool> {
+    pub fn verify_checksum(&self) -> Result<bool, BoxfileError> {
         let mut hasher = Sha256::new();
         hasher.update(&self.header.as_bytes()?);
         hasher.update(&self.body);
@@ -183,34 +187,35 @@ impl Boxfile {
 
     /// Serializes self and writes it to the specified file. The destination must not already
     /// exist, so that boxing never destroys a file which is already there
-    pub fn save_to(&self, path: &Path) -> Result<()> {
+    pub fn save_to(&self, path: &Path) -> Result<(), BoxfileError> {
         log!(DEBUG, "Serializing and saving boxfile to {:?}", path);
 
         let config = bincode::config::standard();
         let bytes = bincode::serde::encode_to_vec(&self, config)
-            .map_err(|err| new_err!(ParseError: Encoding, err.to_string()))?;
-        fs::write_new_bytes(path, &bytes).map_err(|e| new_err!(IOError: Write, path.to_path_buf(); e))?;
+            .map_err(|source| BoxfileError::Encode { what: "the boxfile", source })?;
+        fs::write_new_bytes(path, &bytes).map_err(BoxfileError::io(path))?;
 
         Ok(())
     }
 
     /// Writes the original file's contents to the specified path. The destination must not already
     /// exist, so that restoring a file never destroys one which is already there
-    pub fn restore_to(&self, path: &Path) -> Result<()> {
+    pub fn restore_to(&self, path: &Path) -> Result<(), BoxfileError> {
         log!(DEBUG, "Restoring original file contents to {:?}", path);
 
         let file_data = self.file_data()?;
-        fs::write_new_bytes(path, &file_data).map_err(|e| new_err!(IOError: Write, path.to_path_buf(); e))?;
+        fs::write_new_bytes(path, &file_data).map_err(BoxfileError::io(path))?;
 
         Ok(())
     }
 
     /// Encrypts the body of the `boxfile` together with randomly generated padding 
     /// using the provided encryption key
-    pub fn encrypt_data(&mut self, key: &Key) -> Result<()> {
+    pub fn encrypt_data(&mut self, key: &Key) -> Result<(), BoxfileError> {
         log!(DEBUG, "Encrypting boxfile");
 
-        let encrypted_body = cipher::encrypt(key, &self.header.nonce, &self.body)?;
+        let encrypted_body = cipher::encrypt(key, &self.header.nonce, &self.body)
+            .map_err(BoxfileError::Encryption)?;
         self.body = encrypted_body.into();
 
         if self.header.encrypt_original_data {
@@ -221,10 +226,11 @@ impl Boxfile {
     }
     
     /// Decrypts the body of the `boxfile` (data + padding) using the provided encryption key
-    pub fn decrypt_data(&mut self, key: &Key) -> Result<()> {
+    pub fn decrypt_data(&mut self, key: &Key) -> Result<(), BoxfileError> {
         log!(DEBUG, "Decrypting boxfile");
 
-        let decrypted_body = cipher::decrypt(key, &self.header.nonce, &self.body)?;
+        let decrypted_body = cipher::decrypt(key, &self.header.nonce, &self.body)
+            .map_err(BoxfileError::Decryption)?;
         self.body = decrypted_body.into();
 
         if self.header.encrypt_original_data {
@@ -235,12 +241,15 @@ impl Boxfile {
     }
 
     /// Removes the generated padding, returning only the actual data content of the original file
-    pub fn file_data(&self) -> Result<Box<[u8]>> {
+    pub fn file_data(&self) -> Result<Box<[u8]>, BoxfileError> {
         log!(DEBUG, "Retrieving file data from boxfile");
         let padding_len = self.header.padding_len;
         let data_len = self.body.len() as i32 - padding_len as i32;
         if data_len < 0 {
-            return Err(new_err!(InvalidData: InvalidLength, "Boxfile body".to_string(); "Less than padding length or zero"));
+            return Err(BoxfileError::InvalidPadding {
+                body: self.body.len(),
+                padding: padding_len
+            });
         }
         let file_data = &self.body[..data_len as usize];
         Ok(file_data.into())

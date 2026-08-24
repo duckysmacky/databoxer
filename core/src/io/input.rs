@@ -1,16 +1,14 @@
-use std::sync::OnceLock;
-
-use crate::{new_err, Result};
+use std::{io, sync::OnceLock};
 
 /// Implemented by whichever frontend embeds this crate (CLI, GUI, ...) to supply ways of
 /// getting text input from the user
 pub trait InputPrompter: Send + Sync {
     /// Prompts for a single line of visible input
-    fn prompt_line(&self, message: &str) -> std::io::Result<String>;
+    fn prompt_line(&self, message: &str) -> io::Result<String>;
     /// Prompts for multiple lines of visible input, ending on a blank line
-    fn prompt_lines(&self, message: &str) -> std::io::Result<Vec<String>>;
+    fn prompt_lines(&self, message: &str) -> io::Result<Vec<String>>;
     /// Prompts for a single line of hidden (masked) input, e.g. a password
-    fn prompt_hidden(&self, message: &str) -> std::io::Result<String>;
+    fn prompt_hidden(&self, message: &str) -> io::Result<String>;
 }
 
 static INPUT_PROMPTER: OnceLock<Box<dyn InputPrompter>> = OnceLock::new();
@@ -26,16 +24,16 @@ fn prompter() -> &'static Box<dyn InputPrompter> {
 }
 
 /// Prompts the user for a single line of input
-pub fn prompt_line(message: &str) -> Result<String> {
-    prompter().prompt_line(message).map_err(|e| new_err!(IOError: StandardIO; e))
+pub fn prompt_line(message: &str) -> io::Result<String> {
+    prompter().prompt_line(message)
 }
 
 /// Prompts the user for multiple lines of input, ending on a blank line
-pub fn prompt_lines(message: &str) -> Result<Vec<String>> {
-    prompter().prompt_lines(message).map_err(|e| new_err!(IOError: StandardIO; e))
+pub fn prompt_lines(message: &str) -> io::Result<Vec<String>> {
+    prompter().prompt_lines(message)
 }
 
 /// Prompts the user for a single line of hidden input, such as a password
-pub fn prompt_hidden(message: &str) -> Result<String> {
-    prompter().prompt_hidden(message).map_err(|e| new_err!(IOError: StandardIO; e))
+pub fn prompt_hidden(message: &str) -> io::Result<String> {
+    prompter().prompt_hidden(message)
 }

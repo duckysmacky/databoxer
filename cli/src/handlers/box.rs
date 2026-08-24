@@ -4,10 +4,13 @@ use std::{path::Path, fs};
 
 use clap::ArgMatches;
 
-use databoxer_core::{data::boxfile::Boxfile, Key, log, Result};
+use databoxer_core::{
+    data::{self, boxfile::{Boxfile, BoxfileError}},
+    Key, log,
+};
 
 use crate::{
-    error::{self, Policy, Verdict},
+    error::{self, CliError, OrFail, Verdict},
     naming::{self, OutputPaths},
     handlers, output,
 };
@@ -18,6 +21,9 @@ use crate::{
 /// - The exit code indicating the status of the operation (0 for success, non-zero for errors)
 pub fn handle_box(args: &ArgMatches) -> (u32, u32, i32) {
     let file_paths = handlers::resolve_inputs(args);
+    if file_paths.is_empty() {
+        error::fail(&CliError::NoInputFiles);
+    }
     let total_files = file_paths.len() as u32;
 
     let keep_original_name = args.get_flag("KEEP_NAME");
@@ -25,18 +31,21 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32, i32) {
     let encrypt_metadata = args.get_flag("ENCRYPT_METADATA");
 
     // authenticate once for the whole batch, before a single file is touched
-    let (mut profiles, key) = match handlers::unlock(args) {
-        Ok(unlocked) => unlocked,
-        Err(err) => {
-            log!(ERROR, "Unable to start encryption ({})", err.name());
-            error::report(&err, Policy::Single);
-            return (total_files, 0, err.exit_code() as i32);
-        }
-    };
+    let mut profiles = data::get_profiles()
+        .or_fail_with("Unable to load the profile data");
+
+    let password = handlers::resolve_password(args)
+        .or_fail_with("Unable to read the password");
+
+    // deriving the key from the password is deliberately expensive, so it is done once per
+    // invocation rather than once per file
+    let key = profiles.get_current_profile()
+        .and_then(|profile| profile.get_key(&password))
+        .or_fail_with("Unable to get an encryption key");
 
     let mut output_paths = OutputPaths::new(handlers::get_output_paths(args));
     let mut successful_files: u32 = 0;
-    let mut exit_code: i32 = 0;
+    let mut exit_code: i32 = error::SUCCESS;
 
     log!(INFO, "Starting encryption...");
 
@@ -63,24 +72,22 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32, i32) {
                 successful_files += 1;
             },
             Err(err) => {
-                log!(ERROR, "Unable to encrypt '{}' ({})", file_name.to_string_lossy(), err.name());
+                log!(ERROR, "Unable to encrypt '{}'", file_name.to_string_lossy());
+                exit_code = error::FAILURE;
 
-                // the first failure is the one worth reporting through the exit code
-                if exit_code == 0 {
-                    exit_code = err.exit_code() as i32;
-                }
-
-                if error::report(&err, Policy::Batch) == Verdict::Abort {
+                if error::report(&err) == Verdict::Abort {
                     break;
                 }
             }
         }
     }
 
-    // written once for the whole batch, on the aborted path as well as the normal one
+    // written once for the whole batch, on the aborted path as well as the normal one. reported
+    // rather than fatal, so the summary of what was encrypted still reaches the user
     if let Err(err) = profiles.save() {
-        log!(ERROR, "Unable to save the profile data ({})", err.name());
-        error::report(&err, Policy::Single);
+        log!(ERROR, "Unable to save the profile data");
+        error::print(&err);
+        exit_code = error::FAILURE;
     }
 
     (total_files, successful_files, exit_code)
@@ -94,7 +101,7 @@ fn encrypt_file(
     output_path: &Path,
     generate_padding: bool,
     encrypt_metadata: bool
-) -> Result<()> {
+) -> Result<(), BoxfileError> {
     let mut boxfile = Boxfile::new(input_path, generate_padding, encrypt_metadata)?;
     boxfile.encrypt_data(key)?;
     boxfile.save_to(output_path)

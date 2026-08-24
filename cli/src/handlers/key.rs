@@ -4,88 +4,61 @@ use std::{fs::File, io::Read};
 
 use clap::ArgMatches;
 
-use databoxer_core::{data::keys, encryption::cipher, hex, log, Result};
+use databoxer_core::{
+    data::{keys, profiles::ProfileError},
+    encryption::cipher, hex, log,
+};
 
-use crate::{error::{self, Policy}, output};
+use crate::{error::OrFail, output};
 
-/// Handles the `databoxer key new` subcommand. Returns an exit code indicating the status of the
-/// operation (0 for success, non-zero for errors).
-pub fn handle_key_new(args: &ArgMatches) -> i32 {
-    match new_key(args) {
-        Ok(_) => {
-            output!(SUCCESS, "Successfully generated new encryption key for the current profile");
-            0
-        },
-        Err(err) => {
-            log!(ERROR, "Unable to generate a new encryption key ({})", err.name());
-            error::report(&err, Policy::Single);
-            err.exit_code() as i32
-        }
-    }
+/// Handles the `databoxer key new` subcommand
+pub fn handle_key_new(args: &ArgMatches) {
+    new_key(args).or_fail_with("Unable to generate a new encryption key");
+    output!(SUCCESS, "Successfully generated new encryption key for the current profile");
 }
 
-fn new_key(args: &ArgMatches) -> Result<()> {
+fn new_key(args: &ArgMatches) -> Result<(), ProfileError> {
     log!(INFO, "Generating a new encryption key for current profile");
 
     let key = cipher::generate_key();
-    let password = super::resolve_password(args)?;
+    let password = super::resolve_password(args).or_fail_with("Unable to read the password");
 
     keys::set_key(&password, key)
 }
 
-/// Handles the `databoxer key get` subcommand. Returns an exit code indicating the status of the
-/// operation (0 for success, non-zero for errors).
-pub fn handle_key_get(args: &ArgMatches) -> i32 {
-    match get_key(args) {
-        Ok(key) => {
-            // TODO: add current profile name
-            output!(SUCCESS, "Encryption key for the current profile:");
-            output!(DATA, "{}", key);
-            0
-        },
-        Err(err) => {
-            log!(ERROR, "Unable to get an encryption key for the current profile ({})", err.name());
-            error::report(&err, Policy::Single);
-            err.exit_code() as i32
-        }
-    }
-}
-
-fn get_key(args: &ArgMatches) -> Result<String> {
+/// Handles the `databoxer key get` subcommand
+pub fn handle_key_get(args: &ArgMatches) {
     log!(INFO, "Retrieving the encryption key from the current profile");
 
-    let password = super::resolve_password(args)?;
-    let key = keys::get_key(&password)?;
+    let password = super::resolve_password(args).or_fail_with("Unable to read the password");
+    let key = keys::get_key(&password)
+        .or_fail_with("Unable to get an encryption key for the current profile");
 
-    match args.get_flag("AS_BYTE_ARRAY") {
-        true => Ok(format!("{:?}", key)),
-        false => Ok(hex::bytes_to_string(&key))
-    }
-}
-
-/// Handles the `databoxer key set` subcommand. Returns an exit code indicating the status of the
-/// operation (0 for success, non-zero for errors).
-pub fn handle_key_set(args: &ArgMatches) -> i32 {
-    // read before anything else, so an unreadable key file costs neither work nor a prompt
-    let new_key = match read_new_key(args) {
-        Ok(new_key) => new_key,
-        Err(err) => {
-            log!(ERROR, "Unable to read the key file: {}", err);
-            return error::CLI_FAILURE;
-        }
+    let key = match args.get_flag("AS_BYTE_ARRAY") {
+        true => format!("{:?}", key),
+        false => hex::bytes_to_string(&key)
     };
 
-    match set_key(args, &new_key) {
-        Ok(_) => {
-            output!(SUCCESS, "Successfully set a new encryption key for the current profile");
-            0
-        },
-        Err(err) => {
-            log!(ERROR, "Unable to set an encryption key for the current profile ({})", err.name());
-            error::report(&err, Policy::Single);
-            err.exit_code() as i32
-        }
-    }
+    // TODO: add current profile name
+    output!(SUCCESS, "Encryption key for the current profile:");
+    output!(DATA, "{}", key);
+}
+
+/// Handles the `databoxer key set` subcommand
+pub fn handle_key_set(args: &ArgMatches) {
+    // read before anything else, so an unreadable key file costs neither work nor a prompt
+    let new_key = read_new_key(args).or_fail_with("Unable to read the key file");
+
+    // parsed before authenticating, so an invalid key never costs a password prompt
+    let new_key = cipher::parse_key(&new_key).or_fail_with("Unable to read the supplied key");
+
+    log!(INFO, "Setting the encryption key from the current profile");
+    let password = super::resolve_password(args).or_fail_with("Unable to read the password");
+
+    keys::set_key(&password, new_key)
+        .or_fail_with("Unable to set an encryption key for the current profile");
+
+    output!(SUCCESS, "Successfully set a new encryption key for the current profile");
 }
 
 /// Reads the new key, either from the file it was pointed at or straight off the command line
@@ -94,16 +67,6 @@ fn read_new_key(args: &ArgMatches) -> std::io::Result<String> {
         Some(key_path) => get_key_from_file(key_path),
         None => Ok(args.get_one::<String>("KEY").expect("Key is required").to_string())
     }
-}
-
-fn set_key(args: &ArgMatches, new_key: &str) -> Result<()> {
-    log!(INFO, "Setting the encryption key from the current profile");
-
-    // parsed before authenticating, so an invalid key never costs a password prompt
-    let new_key = cipher::parse_key(new_key)?;
-    let password = super::resolve_password(args)?;
-
-    keys::set_key(&password, new_key)
 }
 
 fn get_key_from_file(key_path: &String) -> std::io::Result<String> {
