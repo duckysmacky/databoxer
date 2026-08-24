@@ -23,13 +23,13 @@ pub fn string_to_bytes(hex_string: &str) -> Result<Vec<u8>, String> {
     // operating on bytes rather than chars, as the two only line up for ASCII input
     let input = hex_string.as_bytes();
 
-    if input.len() % 2 != 0 {
+    if !input.len().is_multiple_of(2) {
         return Err(format!("length ({}) is not a multiple of 2", input.len()));
     }
 
     let mut hex_bytes = Vec::with_capacity(input.len() / 2);
 
-    for (index, pair) in input.chunks_exact(2).enumerate() {
+    for (index, pair) in input.as_chunks::<2>().0.iter().enumerate() {
         match (hex_digit(pair[0]), hex_digit(pair[1])) {
             (Some(high), Some(low)) => hex_bytes.push(high << 4 | low),
             _ => return Err(format!(

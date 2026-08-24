@@ -149,11 +149,11 @@ fn test_profile_manipulation() {
 
     let output = databoxer_cmd!("profile get");
     assert!(output.status.success(), "Profile name retrieval failed");
-    assert!(output.stdout.len() > 0, "Invalid output for current profile");
+    assert!(!output.stdout.is_empty(), "Invalid output for current profile");
 
     let output = databoxer_cmd!("profile list");
     assert!(output.status.success(), "Profiles list retrieval failed");
-    assert!(output.stdout.len() > 0, "Invalid output for the list of existing profiles");
+    assert!(!output.stdout.is_empty(), "Invalid output for the list of existing profiles");
 
     let output = databoxer_cmd!(p "profile delete"; profile_name);
     assert!(output.status.success(), "Profile deletion failed");
@@ -211,7 +211,7 @@ fn test_key_set_from_file() {
     let key = generate_key();
 
     let mut key_file = File::create(&key_file_path).expect("Unable to create key file");
-    key_file.write_all(&key.as_bytes()).expect("Unable to write key data into file");
+    key_file.write_all(key.as_bytes()).expect("Unable to write key data into file");
 
     let output = databoxer_cmd!(p "key set"; "--file", &key_file_path.to_str().unwrap());
     assert!(output.status.success(), "Key set failed");

@@ -36,16 +36,14 @@ impl Logger for CliLogger {
             return;
         }
 
-        match self.mode {
-            LoggerMode::QUIET => match log_type {
-                ERROR => eprintln!("[{}] {}", log_type.icon(), message),
-                _ => return
-            },
-            LoggerMode::NORMAL => match log_type {
-                ERROR | WARN => eprintln!("[{}] {}", log_type.icon(), message),
-                _ => return
-            },
-            LoggerMode::VERBOSE => eprintln!("[{}] {}", log_type.icon(), message),
+        let should_log = match self.mode {
+            LoggerMode::QUIET => log_type == ERROR,
+            LoggerMode::NORMAL => matches!(log_type, ERROR | WARN),
+            LoggerMode::VERBOSE => true,
+        };
+
+        if should_log {
+            eprintln!("[{}] {}", log_type.icon(), message);
         }
     }
 }

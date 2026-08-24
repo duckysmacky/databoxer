@@ -19,8 +19,11 @@ pub fn set_input_prompter(prompter: Box<dyn InputPrompter>) {
     INPUT_PROMPTER.set(prompter).ok();
 }
 
-fn prompter() -> &'static Box<dyn InputPrompter> {
-    INPUT_PROMPTER.get().expect("Input prompter not set")
+fn prompter() -> &'static dyn InputPrompter {
+    INPUT_PROMPTER
+        .get()
+        .expect("Input prompter not set")
+        .as_ref()
 }
 
 /// Prompts the user for a single line of input

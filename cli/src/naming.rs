@@ -66,7 +66,7 @@ pub fn restored_path(input: &Path, name: Option<&str>, extension: Option<&str>) 
         },
         None => {
             log!(WARN, "Original file extension is unknown or missing");
-            output.set_extension("unboxed".to_string());
+            output.set_extension("unboxed");
         }
     }
 

@@ -39,10 +39,10 @@ impl DataboxerCommand {
 
     /// Executes the command and fetches the result. Will panic and fail test if failed to execute
     pub fn execute(mut self) -> Output {
-        println!("Executing: {:?}", &self.command);
+        println!("Executing: {:?}", self.command);
         match self.command.output() {
             Ok(output) => output,
-            Err(err) => panic!("Failed to execute {:?}: {:?}", &self.command, err)
+            Err(err) => panic!("Failed to execute {:?}: {:?}", self.command, err)
         }
     }
 }
@@ -53,11 +53,11 @@ pub fn print_output(output: &Output) {
 
     let stdout = &output.stdout;
     if !stdout.is_empty() {
-        println!("Stdout:\n{}", std::str::from_utf8(&stdout).unwrap());
+        println!("Stdout:\n{}", std::str::from_utf8(stdout).unwrap());
     }
 
     let stderr = &output.stderr;
     if !stderr.is_empty() {
-        println!("Stderr:\n{}", std::str::from_utf8(&stderr).unwrap());
+        println!("Stderr:\n{}", std::str::from_utf8(stderr).unwrap());
     }
 }
