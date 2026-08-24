@@ -17,7 +17,7 @@
 - [Usage](#-usage)
 - [Development](#-development)
 
-## 💡 About
+## About
 
 Databoxer aims to be a lightweight cross-platform solution for file encryption, while also being efficient and safe. **It is not a drop-in replacement** for already long-existing
 encryption tools, such as _Bitlocker_, but instead more of an alternative.
@@ -31,7 +31,7 @@ function to perform its encryption operations. It proved to be much more safe an
 algorithm used in many other similar programs. The files are encrypted using a randomly generated 32-byte _encryption
 key_ and per-file 12-byte _nonce_, which ensures ciphertext's uniqueness across different files.
 
-## 📂 Installation
+## Installation
 
 Databoxer is cross-platform and is supported on all major platforms (Windows, Linux and macOS)
 
@@ -62,9 +62,9 @@ _From latest commit at `master` branch via Cargo_
 cargo install --git https://github.com/duckysmacky/copper.git
 ```
 
-## ⭐ Features
+## Features
 
-### 👤 Profile system
+### Profile system
 
 One of the key features of Databoxer is its **profile management system**. The user of the application can create
 different profiles in order to store keys and manage encrypted files. Each profile has a unique encryption key which 
@@ -73,13 +73,13 @@ is used to encrypt/decrypt files and can be protected by user-defined password.
 _Later down the line Databoxer is planned to have support for native keyring toolchains, such as GnuPG, Kleopatra and
 CryptoAPI (CNG) (for Windows)._
 
-### 📦 Boxfile file format
+### Boxfile file format
 
 The encrypted files are "boxed" into a `.box` file and stored in that way on the drive. A Boxfile (`.box` file) is a 
 custom file format which uses different techniques in order to ensure safety of the data, verify its content integrity
 and embed additional information about the file.
 
-## 🕹️ Usage
+## Usage
 
 Currently, the program provides a CLI which is used for all major operations. The program can be run with
 `databoxer <COMMAND>`. The complete list of commands can be viewed with `databoxer --help`. Below are shown usage
@@ -171,12 +171,12 @@ A new key can be created with the `key new` command, generating a fresh encrypti
 key can also be set from the outside (using a hex string) using the `key set <KEY>` command. The key has to be a 32-byte
 key to be accepted (refer to `key get` command's output for how the key should look to be valid).
 
-## 🧰 Development
+## Development
 
 As stated previously this project is in very active development. The current implementation of many things might
 completely change by the time it is fully released (`1.0.0`).
 
-### Feature plan
+### Roadmap
 
 _These plans could change during future development_
 
@@ -189,24 +189,6 @@ _These plans could change during future development_
 - [ ] Batch file encryption (`boxfile` archive)
 - [ ] OS-native toolchain support (GnuPG, Kleopatra, CryptoAPI, etc.)
 - [ ] GUI interface
-
-### Project structure
-
-```
-src/ - Source code
-|--- cli/ - CLI command handling
-|    |--- handlers/ - Command handlers
-|    |--- io/ - Input/output handling
-|--- core/ - Core functionality
-|    |--- app/ - Main application logic
-|    |--- data/ - File and data handling
-|    |--- encryption/ - Cryptography-related functionality
-|    |--- os/ - OS-specific functionality
-|--- utils/ - Utility functions
-|--- gui/ - GUI interface (planned)
-test/ - Integration & unit tests
-|--- common/ - Common test utilities
-```
 
 ### Contribution
 
