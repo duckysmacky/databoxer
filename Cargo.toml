@@ -38,4 +38,4 @@ chrono = "0.4.41"
 libc = "0.2.169"
 
 # windows
-windows-sys = "0.59.0"
+windows-sys = { version = "0.59.0", features = ["Win32_System_Console"] }
