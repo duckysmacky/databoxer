@@ -1,72 +1,74 @@
 //! Handlers for the `databoxer profile` command and its subcommands
 
-use clap::ArgMatches;
-
 use databoxer_core::{
     data::{self, profiles::{Profile, ProfileError}},
     log,
 };
 
-use crate::{error::OrFail, output};
+use crate::{
+    command::{ProfileDeleteArgs, ProfileNewArgs, ProfileSetArgs},
+    error::OrFail,
+    output,
+};
 
 /// Handles the `databoxer profile create` subcommand
-pub fn handle_profile_create(args: &ArgMatches) {
-    let name = args.get_one::<String>("NAME").expect("Profile name is required");
+pub fn handle_profile_create(args: &ProfileNewArgs) {
+    let name = &args.name;
 
-    create_profile(args, name)
+    create_profile(args.password.as_deref(), name)
         .or_fail_with(format!("Unable to create a new profile named '{}'", name));
 
     output!(SUCCESS, "Successfully created new profile '{}'", name);
 }
 
-fn create_profile(args: &ArgMatches, name: &str) -> Result<(), ProfileError> {
+fn create_profile(password: Option<&str>, name: &str) -> Result<(), ProfileError> {
     let mut profiles = data::get_profiles()?;
 
     // checked before authenticating, so a doomed request never costs a password prompt
     profiles.ensure_absent(name)?;
 
-    let password = super::resolve_password(args).or_fail_with("Unable to read the password");
+    let password = super::resolve_password(password).or_fail_with("Unable to read the password");
     profiles.new_profile(Profile::new(name, &password)?)
 }
 
 /// Handles the `databoxer profile delete` subcommand
-pub fn handle_profile_delete(args: &ArgMatches) {
-    let name = args.get_one::<String>("NAME").expect("Profile name is required");
+pub fn handle_profile_delete(args: &ProfileDeleteArgs) {
+    let name = &args.name;
 
-    delete_profile(args, name)
+    delete_profile(args.password.as_deref(), name)
         .or_fail_with(format!("Unable to delete profile '{}'", name));
 
     output!(SUCCESS, "Successfully deleted profile '{}'", name);
 }
 
-fn delete_profile(args: &ArgMatches, name: &str) -> Result<(), ProfileError> {
+fn delete_profile(password: Option<&str>, name: &str) -> Result<(), ProfileError> {
     let mut profiles = data::get_profiles()?;
     profiles.ensure_exists(name)?;
 
-    let password = super::resolve_password(args).or_fail_with("Unable to read the password");
+    let password = super::resolve_password(password).or_fail_with("Unable to read the password");
     profiles.delete_profile(&password, name)
 }
 
 /// Handles the `databoxer profile set` subcommand
-pub fn handle_profile_set(args: &ArgMatches) {
-    let name = args.get_one::<String>("NAME").expect("Profile name is required");
+pub fn handle_profile_set(args: &ProfileSetArgs) {
+    let name = &args.name;
 
-    select_profile(args, name)
+    select_profile(args.password.as_deref(), name)
         .or_fail_with(format!("Unable to switch to profile '{}'", name));
 
     output!(SUCCESS, "Successfully set current profile to '{}'", name);
 }
 
-fn select_profile(args: &ArgMatches, name: &str) -> Result<(), ProfileError> {
+fn select_profile(password: Option<&str>, name: &str) -> Result<(), ProfileError> {
     let mut profiles = data::get_profiles()?;
     profiles.ensure_selectable(name)?;
 
-    let password = super::resolve_password(args).or_fail_with("Unable to read the password");
+    let password = super::resolve_password(password).or_fail_with("Unable to read the password");
     profiles.set_current(&password, name)
 }
 
 /// Handles the `databoxer profile get` subcommand
-pub fn handle_profile_get(_args: &ArgMatches) {
+pub fn handle_profile_get() {
     // no authentication needed, as only the name is read
     let name = data::get_profiles()
         .and_then(|mut profiles| Ok(profiles.get_current_profile()?.name.clone()))
@@ -77,7 +79,7 @@ pub fn handle_profile_get(_args: &ArgMatches) {
 }
 
 /// Handles the `databoxer profile list` subcommand
-pub fn handle_profile_list(_args: &ArgMatches) {
+pub fn handle_profile_list() {
     // no authentication needed, as only the names are read
     let names = data::get_profiles()
         .map(|profiles| profiles.get_profiles()

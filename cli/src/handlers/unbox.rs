@@ -2,14 +2,13 @@
 
 use std::{path::{Path, PathBuf}, fs};
 
-use clap::ArgMatches;
-
 use databoxer_core::{
     data::{self, boxfile::{Boxfile, BoxfileError}},
     Key, log,
 };
 
 use crate::{
+    command::UnboxArgs,
     error::{self, CliError, OrFail, Verdict},
     naming::{self, OutputPaths},
     handlers, output,
@@ -25,8 +24,8 @@ struct Restored {
 /// - The total number of files processed
 /// - The number of successfully decrypted files
 /// - The exit code indicating the status of the operation (0 for success, non-zero for errors)
-pub fn handle_unbox(args: &ArgMatches) -> (u32, u32, i32) {
-    let file_paths = handlers::resolve_inputs(args);
+pub fn handle_unbox(args: &UnboxArgs) -> (u32, u32, i32) {
+    let file_paths = handlers::resolve_inputs(&args.path, args.recursive);
     if file_paths.is_empty() {
         error::fail(&CliError::NoInputFiles);
     }
@@ -36,7 +35,7 @@ pub fn handle_unbox(args: &ArgMatches) -> (u32, u32, i32) {
     let mut profiles = data::get_profiles()
         .or_fail_with("Unable to load the profile data");
 
-    let password = handlers::resolve_password(args)
+    let password = handlers::resolve_password(args.password.as_deref())
         .or_fail_with("Unable to read the password");
 
     // deriving the key from the password is deliberately expensive, so it is done once per
@@ -45,7 +44,7 @@ pub fn handle_unbox(args: &ArgMatches) -> (u32, u32, i32) {
         .and_then(|profile| profile.get_key(&password))
         .or_fail_with("Unable to get an encryption key");
 
-    let mut output_paths = OutputPaths::new(handlers::get_output_paths(args));
+    let mut output_paths = OutputPaths::new(handlers::get_output_paths(&args.output));
     let mut successful_files: u32 = 0;
     let mut exit_code: i32 = error::SUCCESS;
 
@@ -53,7 +52,7 @@ pub fn handle_unbox(args: &ArgMatches) -> (u32, u32, i32) {
 
     // decrypt each file and handle errors accordingly
     for input_path in file_paths {
-        let file_name = handlers::display_name(args, &input_path);
+        let file_name = handlers::display_name(args.show_full_path, &input_path);
         let supplied_output = output_paths.take_next();
 
         output!(STATUS, "Decrypting {:?}...", file_name);

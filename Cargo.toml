@@ -27,7 +27,7 @@ sha2 = "0.10.8"
 argon2 = { version = "0.5.3", features = ["std"] }
 
 # cli
-clap = { version = "4.5.38", features = ["cargo"] }
+clap = { version = "4.5.38", features = ["cargo", "derive"] }
 
 # utility
 uuid = { version = "1.16.0", features = ["v4", "fast-rng"] }

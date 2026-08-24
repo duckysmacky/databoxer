@@ -2,14 +2,13 @@
 
 use std::{path::Path, fs};
 
-use clap::ArgMatches;
-
 use databoxer_core::{
     data::{self, boxfile::{Boxfile, BoxfileError}},
     Key, log,
 };
 
 use crate::{
+    command::BoxArgs,
     error::{self, CliError, OrFail, Verdict},
     naming::{self, OutputPaths},
     handlers, output,
@@ -19,22 +18,22 @@ use crate::{
 /// - The total number of files processed
 /// - The number of successfully encrypted files
 /// - The exit code indicating the status of the operation (0 for success, non-zero for errors)
-pub fn handle_box(args: &ArgMatches) -> (u32, u32, i32) {
-    let file_paths = handlers::resolve_inputs(args);
+pub fn handle_box(args: &BoxArgs) -> (u32, u32, i32) {
+    let file_paths = handlers::resolve_inputs(&args.path, args.recursive);
     if file_paths.is_empty() {
         error::fail(&CliError::NoInputFiles);
     }
     let total_files = file_paths.len() as u32;
 
-    let keep_original_name = args.get_flag("KEEP_NAME");
-    let generate_padding = !args.get_flag("NO_PADDING");
-    let encrypt_metadata = args.get_flag("ENCRYPT_METADATA");
+    let keep_original_name = args.keep_name;
+    let generate_padding = !args.no_padding;
+    let encrypt_metadata = args.encrypt_metadata;
 
     // authenticate once for the whole batch, before a single file is touched
     let mut profiles = data::get_profiles()
         .or_fail_with("Unable to load the profile data");
 
-    let password = handlers::resolve_password(args)
+    let password = handlers::resolve_password(args.password.as_deref())
         .or_fail_with("Unable to read the password");
 
     // deriving the key from the password is deliberately expensive, so it is done once per
@@ -43,7 +42,7 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32, i32) {
         .and_then(|profile| profile.get_key(&password))
         .or_fail_with("Unable to get an encryption key");
 
-    let mut output_paths = OutputPaths::new(handlers::get_output_paths(args));
+    let mut output_paths = OutputPaths::new(handlers::get_output_paths(&args.output));
     let mut successful_files: u32 = 0;
     let mut exit_code: i32 = error::SUCCESS;
 
@@ -51,7 +50,7 @@ pub fn handle_box(args: &ArgMatches) -> (u32, u32, i32) {
 
     // encrypt each file and handle errors accordingly
     for input_path in file_paths {
-        let file_name = handlers::display_name(args, &input_path);
+        let file_name = handlers::display_name(args.show_full_path, &input_path);
         let output_path = output_paths.take_next()
             .unwrap_or_else(|| naming::boxed_path(&input_path, keep_original_name));
 

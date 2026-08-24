@@ -1,26 +1,23 @@
 //! Handler for the `databoxer info` command
 
 use std::{
-    path::{Path, PathBuf},
+    path::Path,
     time::SystemTime,
 };
 
 use chrono::{DateTime, Local};
-use clap::ArgMatches;
-
 use databoxer_core::{
     data::boxfile::{Boxfile, BoxfileError, FileMetadata},
     log,
 };
 
-use crate::{error::{self, CliError, OrFail}, output, path};
+use crate::{command::InfoArgs, error::{self, CliError, OrFail}, output, path};
 
 /// Handles the `databoxer info` subcommand. Returns an exit code indicating the status of the 
 /// operation (0 for success, non-zero for errors).
-pub fn handle_info(args: &ArgMatches) {
+pub fn handle_info(args: &InfoArgs) {
     let file_path = {
-        let path = args.get_one::<String>("PATH").expect("File path is required");
-        let paths = path::parse_paths(vec![PathBuf::from(path)], false);
+        let paths = path::parse_paths(vec![args.path.clone()], false);
 
         match paths.into_iter().next() {
             Some(path) => path,
@@ -31,7 +28,7 @@ pub fn handle_info(args: &ArgMatches) {
 
     output!(STATUS, "Retrieving information about '{}'...", file_path.display());
 
-    let info_lines = get_info(&file_path, args.get_flag("SHOW_UNKNOWN")).or_fail_with(
+    let info_lines = get_info(&file_path, args.show_unknown).or_fail_with(
         format!("Unable to get information about '{}'", file_path.display())
     );
 

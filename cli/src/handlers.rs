@@ -15,8 +15,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use clap::ArgMatches;
-
 use crate::path;
 
 pub use {
@@ -27,35 +25,20 @@ pub use {
     unbox::handle_unbox,
 };
 
-/// Converts from the passed arguments strings to vector of paths
-fn get_path_vec(args: &ArgMatches, arg_id: &str) -> Option<Vec<PathBuf>> {
-    if let Some(strings) = args.get_many::<String>(arg_id) {
-        return Some(strings
-            .map(|s| PathBuf::from(s))
-            .collect::<Vec<PathBuf>>()
-        )
-    }
-    None
-}
-
 /// Expands the supplied `PATH` arguments into the flat list of files to work on, descending into
 /// directories and optionally their subdirectories
-fn resolve_inputs(args: &ArgMatches) -> Vec<PathBuf> {
-    let input_paths = get_path_vec(args, "PATH").expect("File path is required");
-    let recursive = args.get_flag("RECURSIVE");
-
-    path::parse_paths(input_paths, recursive)
+fn resolve_inputs(input_paths: &[PathBuf], recursive: bool) -> Vec<PathBuf> {
+    path::parse_paths(input_paths.to_vec(), recursive)
 }
 
 /// Collects the supplied `OUTPUT` arguments into a queue, one output path per processed file
-fn get_output_paths(args: &ArgMatches) -> Option<VecDeque<PathBuf>> {
-    let paths = get_path_vec(args, "OUTPUT")?;
-    Some(VecDeque::from(paths))
+fn get_output_paths(paths: &[PathBuf]) -> Option<VecDeque<PathBuf>> {
+    (!paths.is_empty()).then(|| VecDeque::from(paths.to_vec()))
 }
 
 /// Picks how a file is referred to in the program's output, honouring the `--show-full-path` flag
-fn display_name(args: &ArgMatches, path: &Path) -> OsString {
-    match args.get_flag("SHOW_FULL_PATH") {
+fn display_name(show_full_path: bool, path: &Path) -> OsString {
+    match show_full_path {
         true => path.as_os_str().to_os_string(),
         false => path.file_name().unwrap_or(OsStr::new("<unknown file name>")).to_os_string()
     }
@@ -63,8 +46,8 @@ fn display_name(args: &ArgMatches, path: &Path) -> OsString {
 
 /// Returns the password supplied through the `--password` argument, prompting the user for one if
 /// it was omitted. Resolved once per invocation, before any work is started
-pub fn resolve_password(args: &ArgMatches) -> io::Result<String> {
-    match args.get_one::<String>("PASSWORD") {
+pub fn resolve_password(password: Option<&str>) -> io::Result<String> {
+    match password {
         Some(password) => Ok(password.to_string()),
         None => databoxer_core::io::input::prompt_hidden("Enter the password for the current profile")
     }

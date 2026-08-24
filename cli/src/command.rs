@@ -1,279 +1,175 @@
-//! Contains the code for the CLI command generation: arguments, flags, etc.
+//! Typed command-line interface definitions.
 
-use clap::{command, Arg, ArgAction, Command};
+mod r#box;
+mod info;
+mod key;
+mod profile;
+mod unbox;
 
-pub fn get_command() -> Command {
-    command!()
-        /* BASE COMMAND */
-        .arg(Arg::new("DEBUG")
-            .help("Turns on extensive debug output information")
-            .short('d')
-            .long("debug")
-            .global(true)
-            .action(ArgAction::SetTrue)
-        )
-        .arg(Arg::new("VERBOSE")
-            .help("Use verbose output (extra information)")
-            .short('v')
-            .long("verbose")
-            .global(true)
-            .action(ArgAction::SetTrue)
-            .conflicts_with("QUIET")
-        )
-        .arg(Arg::new("QUIET")
-            .help("Do not print any log messages. Suggested to be toggled on for output piping")
-            .short('q')
-            .long("quiet")
-            .global(true)
-            .action(ArgAction::SetTrue)
-            .conflicts_with("VERBOSE")
-        )
-        /* BOX SUBCOMMAND */
-        .subcommand(Command::new("box")
-            .about("Encrypt specified files into a special file type")
-            .arg(Arg::new("PATH")
-                .help("Specify the path(s) to a file or directory for encryption. A file path encrypts the file and a directory path encrypts all files within")
-                .default_value(".")
-                .action(ArgAction::Append)
-            )
-            .arg(Arg::new("PASSWORD")
-                .short('p')
-                .long("password")
-                .help("Specify the password used for authentication")
-                .action(ArgAction::Set)
-            )
-            .arg(Arg::new("RECURSIVE")
-                .short('R')
-                .long("recursive")
-                .help("Recursively encrypt directory")
-                .action(ArgAction::SetTrue)
-            )
-            .arg(Arg::new("KEEP_NAME")
-                .short('k')
-                .long("keep-name")
-                .help("Keep original file name for the encrypted file")
-                .action(ArgAction::SetTrue)
-                .conflicts_with("OUTPUT")
-            )
-            .arg(Arg::new("OUTPUT")
-                .short('o')
-                .long("output")
-                .help("Specify a path for the output file. In case of multiple input paths, output paths will be specified in order of the input")
-                .action(ArgAction::Append)
-                .conflicts_with("KEEP_NAME")
-            )
-            .arg(Arg::new("SHOW_FULL_PATH")
-                .short('f')
-                .long("full")
-                .help("Output the full relative path to the encrypted file")
-                .action(ArgAction::SetTrue)
-            )
-            .arg(Arg::new("NO_PADDING")
-                .long("no-padding")
-                .help("Disable random padding generation for the .box file")
-                .action(ArgAction::SetTrue)
-            )
-            .arg(Arg::new("ENCRYPT_METADATA")
-                .short('e')
-                .long("metadata")
-                .help("Encrypt original file metadata (name, extension, OS, modify time, etc.)")
-                .action(ArgAction::SetTrue)
-            )
-            // .arg(Arg::new("overwrite") // TODO
-            //     .short('w')
-            //     .long("overwrite")
-            //     .help("Automatically overwrite existing files without prompting the user")
-            //     .action(ArgAction::SetTrue)
-            // )
-            // .arg(Arg::new("compression") // TODO
-            //     .short('z')
-            //     .long("compression")
-            //     .help("Compresses the file(s) before encryption")
-            //     .action(ArgAction::Set)
-            //     .default_value("none")
-            // )
-            // .arg(Arg::new("exclude") // TODO
-            //     .short('e')
-            //     .long("exclude")
-            //     .help("Exclude specific file patterns from being encrypted")
-            //     .action(ArgAction::Set)
-            // )
-        )
-        /* UNBOX SUBCOMMAND */
-        .subcommand(Command::new("unbox")
-            .about("Decrypt specified files from a special file type")
-            .arg(Arg::new("PATH")
-                .help("Specify the path(s) to a file or directory for encryption. A file path encrypts the file and a directory path encrypts all files within")
-                .default_value(".")
-                .action(ArgAction::Append)
-            )
-            .arg(Arg::new("PASSWORD")
-                .short('p')
-                .long("password")
-                .help("Specify the password used for authentication")
-                .action(ArgAction::Set)
-            )
-            .arg(Arg::new("RECURSIVE")
-                .short('R')
-                .long("recursive")
-                .help("Recursively decrypt directory")
-                .action(ArgAction::SetTrue)
-            )
-            .arg(Arg::new("OUTPUT")
-                .short('o')
-                .long("output")
-                .help("Specify a path for the output file. In case of multiple input paths, output paths will be specified in order of the input")
-                .action(ArgAction::Append)
-            )
-            .arg(Arg::new("SHOW_FULL_PATH")
-                .short('f')
-                .long("full")
-                .help("Output the full relative path to the decrypted file")
-                .action(ArgAction::SetTrue)
-            )
-            // .arg(Arg::new("overwrite") // TODO
-            //     .short('w')
-            //     .long("overwrite")
-            //     .help("Automatically overwrite existing files without prompting the user")
-            //     .action(ArgAction::SetTrue)
-            // )
-            // .arg(Arg::new("check-integrity") // TODO
-            //     .short('i')
-            //     .long("check-integrity")
-            //     .help("Validates the integrity of the decrypted file by comparing it with an original checksum (if available)")
-            //     .action(ArgAction::SetTrue)
-            // )
-            // .arg(Arg::new("preserve-attributes") // TODO
-            //     .long("preserve-attributes")
-            //     .help("Preserves original file attributes (e.g., permissions, timestamps) when decrypting")
-            //     .action(ArgAction::SetTrue)
-            // )
-        )
-        .subcommand(Command::new("info")
-            .about("Parse and get original file information from a '.box' file")
-            .arg(Arg::new("PATH")
-                .help("Specify the the target encrypted '.box' file")
-                .required(true)
-                .action(ArgAction::Set)
-            )
-            .arg(Arg::new("SHOW_UNKNOWN")
-                .short('u')
-                .long("unknown")
-                .help("Show unknown metadata")
-                .action(ArgAction::SetTrue)
-            )
-        )
-        /* PROFILE SUBCOMMAND */
-        .subcommand(Command::new("profile")
-            .subcommand_required(true)
-            .arg_required_else_help(true)
-            .about("Control custom profiles")
-            /* CREATE PROFILE SUBCOMMAND */
-            .subcommand(Command::new("new")
-                .about("Create a new profile")
-                .alias("create")
-                .arg(Arg::new("NAME")
-                    .help("A unique name for the profile")
-                    .required(true)
-                )
-                .arg(Arg::new("PASSWORD")
-                    .short('p')
-                    .long("password")
-                    .help("Specify the password used for authentication")
-                    .action(ArgAction::Set)
-                )
-            )
-            /* DELETE PROFILE SUBCOMMAND */
-            .subcommand(Command::new("delete")
-                .about("Delete a specified profile")
-                .alias("remove")
-                .arg(Arg::new("NAME")
-                    .help("Name of the profile to delete")
-                    .required(true)
-                )
-                .arg(Arg::new("PASSWORD")
-                    .short('p')
-                    .long("password")
-                    .help("Specify the password used for authentication")
-                    .action(ArgAction::Set)
-                )
-            )
-            /* SELECT PROFILE SUBCOMMAND */
-            .subcommand(Command::new("set")
-                .about("Select a profile to use")
-                .alias("select")
-                .arg(Arg::new("NAME")
-                    .help("Name of the profile to switch to")
-                    .required(true)
-                )
-                .arg(Arg::new("PASSWORD")
-                    .short('p')
-                    .long("password")
-                    .help("Specify the password used for authentication")
-                    .action(ArgAction::Set)
-                )
-            )
-            /* GET PROFILE SUBCOMMAND */
-            .subcommand(Command::new("get")
-                .about("Get current profile's name")
-                .alias("current")
-            )
-            /* LIST PROFILE SUBCOMMAND */
-            .subcommand(Command::new("list")
-                .about("List all available profiles (names)")
-            )
-        )
-        /* KEY SUBCOMMAND */
-        .subcommand(Command::new("key")
-            .subcommand_required(true)
-            .arg_required_else_help(true)
-            .about("Control profile\'s encryption key")
-            /* GENERATE KEY SUBCOMMAND */
-            .subcommand(Command::new("new")
-                .about("Generate a new encryption key for the current profile")
-                .alias("generate")
-                .arg(Arg::new("PASSWORD")
-                    .short('p')
-                    .long("password")
-                    .help("Specify the password used for authentication")
-                    .action(ArgAction::Set)
-                )
-            )
-            /* GET KEY SUBCOMMAND */
-            .subcommand(Command::new("get")
-                .about("Get current profile\'s encryption key")
-                .arg(Arg::new("PASSWORD")
-                    .short('p')
-                    .long("password")
-                    .help("Specify the password used for authentication")
-                    .action(ArgAction::Set)
-                )
-                .arg(Arg::new("AS_BYTE_ARRAY")
-                    .help("Output key as an array of bytes")
-                    .short('b')
-                    .long("byte-array")
-                    .action(ArgAction::SetTrue)
-                )
-            )
-            /* SET KEY SUBCOMMAND */
-            .subcommand(Command::new("set")
-                .about("Set a new key for the current profile")
-                .arg(Arg::new("KEY")
-                    .help("A 32-byte encryption key represented by hex values (e.g.: DA495EFCF25904AC2FF438BE380FF660E150E65B03AC543398C43AD4FC617962)")
-                    .required_unless_present("FILE")
-                )
-                .arg(Arg::new("PASSWORD")
-                    .short('p')
-                    .long("password")
-                    .help("Specify the password used for authentication")
-                    .action(ArgAction::Set)
-                )
-                .arg(Arg::new("FILE")
-                    .short('f')
-                    .long("file")
-                    .help("Specify the file from which the 32-byte key value should be read")
-                    .action(ArgAction::Set)
-                )
-            )
-        )
+pub use {
+    info::InfoArgs,
+    key::{KeyArgs, KeyCommands, KeyGetArgs, KeyNewArgs, KeySetArgs},
+    profile::{ProfileArgs, ProfileCommands, ProfileDeleteArgs, ProfileNewArgs, ProfileSetArgs},
+    r#box::BoxArgs,
+    unbox::UnboxArgs,
+};
+
+use clap::{Parser, Subcommand};
+
+#[derive(Debug, Parser)]
+#[command(author, version, about, long_about = None)]
+pub struct Cli {
+    /// Turns on debug output information
+    #[arg(short, long, global = true)]
+    pub debug: bool,
+
+    /// Use verbose output
+    #[arg(short, long, global = true, conflicts_with = "quiet")]
+    pub verbose: bool,
+
+    /// Use quiet output
+    #[arg(short, long, global = true, conflicts_with = "verbose")]
+    pub quiet: bool,
+
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Commands {
+    /// Encrypt specified files into a special file type
+    Box(BoxArgs),
+
+    /// Decrypt specified files from a special file type
+    Unbox(UnboxArgs),
+
+    /// Parse and get original file information from a '.box' file
+    Info(InfoArgs),
+
+    /// Control custom profiles
+    Profile(ProfileArgs),
+
+    /// Control profile's encryption key
+    Key(KeyArgs),
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use clap::{CommandFactory, Parser};
+
+    use super::*;
+
+    #[test]
+    fn command_definition_is_valid() {
+        Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn no_command_is_left_for_application_error_handling() {
+        let cli = Cli::try_parse_from(["databoxer"]).unwrap();
+        assert!(cli.command.is_none());
+    }
+
+    #[test]
+    fn box_defaults_and_legacy_option_names_are_preserved() {
+        let cli = Cli::try_parse_from(["databoxer", "box", "--full", "--metadata"]).unwrap();
+        let Some(Commands::Box(args)) = cli.command else {
+            panic!("expected box command");
+        };
+
+        assert_eq!(args.path, vec![PathBuf::from(".")]);
+        assert!(args.show_full_path);
+        assert!(args.encrypt_metadata);
+    }
+
+    #[test]
+    fn global_flags_are_accepted_after_subcommands() {
+        let cli = Cli::try_parse_from(["databoxer", "key", "get", "--verbose"]).unwrap();
+        assert!(cli.verbose);
+        assert!(matches!(
+            cli.command,
+            Some(Commands::Key(KeyArgs {
+                command: KeyCommands::Get(_)
+            }))
+        ));
+    }
+
+    #[test]
+    fn profile_aliases_are_preserved() {
+        let aliases = [
+            ("create", "new"),
+            ("remove", "delete"),
+            ("select", "set"),
+            ("current", "get"),
+        ];
+
+        for (alias, expected) in aliases {
+            let mut argv = vec!["databoxer", "profile", alias];
+            if !matches!(alias, "current") {
+                argv.push("example");
+            }
+            let cli = Cli::try_parse_from(argv).unwrap();
+            let Some(Commands::Profile(args)) = cli.command else {
+                panic!("expected profile command");
+            };
+
+            let actual = match args.command {
+                ProfileCommands::New(_) => "new",
+                ProfileCommands::Delete(_) => "delete",
+                ProfileCommands::Set(_) => "set",
+                ProfileCommands::Get => "get",
+                ProfileCommands::List => "list",
+            };
+            assert_eq!(actual, expected);
+        }
+    }
+
+    #[test]
+    fn key_generate_alias_is_preserved() {
+        let cli = Cli::try_parse_from(["databoxer", "key", "generate"]).unwrap();
+        assert!(matches!(
+            cli.command,
+            Some(Commands::Key(KeyArgs {
+                command: KeyCommands::New(_)
+            }))
+        ));
+    }
+
+    #[test]
+    fn builder_constraints_are_preserved() {
+        assert!(Cli::try_parse_from(["databoxer", "--verbose", "--quiet"]).is_err());
+        assert!(
+            Cli::try_parse_from(["databoxer", "box", "--keep-name", "--output", "out.box",])
+                .is_err()
+        );
+        assert!(Cli::try_parse_from(["databoxer", "key", "set"]).is_err());
+        assert!(Cli::try_parse_from(["databoxer", "profile"]).is_err());
+        assert!(Cli::try_parse_from(["databoxer", "key"]).is_err());
+    }
+
+    #[test]
+    fn repeated_paths_and_outputs_keep_their_order() {
+        let cli = Cli::try_parse_from([
+            "databoxer",
+            "box",
+            "first",
+            "second",
+            "--output",
+            "one.box",
+            "--output",
+            "two.box",
+        ])
+        .unwrap();
+        let Some(Commands::Box(args)) = cli.command else {
+            panic!("expected box command");
+        };
+
+        assert_eq!(args.path, [PathBuf::from("first"), PathBuf::from("second")]);
+        assert_eq!(
+            args.output,
+            [PathBuf::from("one.box"), PathBuf::from("two.box")]
+        );
+    }
 }
