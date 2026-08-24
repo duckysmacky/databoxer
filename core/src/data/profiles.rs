@@ -1,7 +1,9 @@
 mod error;
-mod profiles;
+mod file;
+mod profile;
 
 pub use {
     error::ProfileError,
-    profiles::{Profile, ProfileData},
+    file::ProfileData,
+    profile::Profile,
 };
