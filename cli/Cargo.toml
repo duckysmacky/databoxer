@@ -1,5 +1,5 @@
 [package]
-name = "databoxer-cli"
+name = "databoxer"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -7,8 +7,16 @@ description = "Fast and easy to use CLI-based file encryption program"
 readme = "../README.md"
 license-file = "../LICENSE"
 repository.workspace = true
-keywords = ["security", "encryption", "cli", "data-storage"]
-categories = ["command-line-utilities", "cryptography"]
+keywords = [
+	"security",
+	"encryption",
+	"cli",
+	"data-storage"
+]
+categories = [
+	"command-line-utilities",
+	"cryptography"
+]
 
 [lib]
 name = "databoxer_cli"

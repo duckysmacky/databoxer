@@ -3,7 +3,7 @@ name = "databoxer-core"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
-description = "Core encryption and data-management library for Databoxer"
+description = "Core library for Databoxer"
 license-file = "../LICENSE"
 repository.workspace = true
 

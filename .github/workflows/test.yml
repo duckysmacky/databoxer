@@ -34,10 +34,10 @@ jobs:
         run: cargo test --package databoxer-core --lib --verbose -- --show-output
 
       - name: Test CLI unit tests
-        run: cargo test --package databoxer-cli --lib --bins --verbose -- --show-output
+        run: cargo test --package databoxer --lib --bins --verbose -- --show-output
 
       - name: Test CLI integration tests
-        run: cargo test --package databoxer-cli --test test_cli --verbose -- --test-threads=1 --show-output
+        run: cargo test --package databoxer --test test_cli --verbose -- --test-threads=1 --show-output
 
   checks:
     name: Rust checks
