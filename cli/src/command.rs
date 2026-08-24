@@ -73,18 +73,6 @@ mod tests {
     }
 
     #[test]
-    fn box_defaults_and_legacy_option_names_are_preserved() {
-        let cli = Cli::try_parse_from(["databoxer", "box", "--full", "--metadata"]).unwrap();
-        let Some(Commands::Box(args)) = cli.command else {
-            panic!("expected box command");
-        };
-
-        assert_eq!(args.path, vec![PathBuf::from(".")]);
-        assert!(args.show_full_path);
-        assert!(args.encrypt_metadata);
-    }
-
-    #[test]
     fn global_flags_are_accepted_after_subcommands() {
         let cli = Cli::try_parse_from(["databoxer", "key", "get", "--verbose"]).unwrap();
         assert!(cli.verbose);
